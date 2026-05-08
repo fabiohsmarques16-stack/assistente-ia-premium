@@ -1,7 +1,7 @@
 {
   "name": "Assistente IA Premium",
   "short_name": "Assistente IA",
-  "description": "Central pessoal inteligente para tarefas, finanças, hábitos, projetos e IA.",
+  "description": "Central pessoal inteligente com login, banco de dados, IA, notificações e nuvem.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

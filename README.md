@@ -1,24 +1,26 @@
-# Assistente IA Premium - PWA V1
+# Assistente IA Premium - PWA V2
 
-Este projeto é a primeira versão visual instalável como PWA.
+Versão com estrutura para:
+- Banco de dados local via localStorage
+- Login com Firebase Authentication
+- Sincronização em nuvem com Firebase Firestore
+- IA integrada via endpoint seguro
+- Notificações no Android/Chrome
+- Dashboard profissional estilo Notion/ChatGPT/ClickUp
 
-## Como testar no computador
-Abra o arquivo `index.html` no navegador.
+## Arquivos novos
+- `firebase-config.js`: configure Firebase e endpoint da IA.
+- `app.js`: lógica de login, banco, sincronização, IA e notificações.
+- `service-worker.js`: cache offline.
 
-## Como instalar no Android
-Para aparecer a opção de instalar corretamente, o app precisa rodar em servidor HTTPS ou local server.
+## Importante sobre IA
+Não coloque chave da OpenAI direto no aplicativo. Use backend seguro:
+- Firebase Functions
+- Cloudflare Worker
+- Servidor Node.js
 
-Opção simples:
-1. Coloque esta pasta em uma hospedagem, Netlify, Vercel ou GitHub Pages.
-2. Abra o link no Chrome Android.
-3. Toque em "Instalar app" ou nos 3 pontos > "Adicionar à tela inicial".
+## Para publicar
+Suba todos os arquivos no mesmo repositório GitHub Pages, substituindo a V1.
 
-## Arquivos
-- `index.html`: visual principal
-- `app.js`: navegação, instalação e controle offline
-- `manifest.json`: configuração PWA
-- `service-worker.js`: cache offline
-- `icons/`: ícones do app
-
-## Próximo passo
-Converter para APK com Capacitor.
+## Para usar sem Firebase
+Use o botão "Entrar em modo demonstração". O app salva os dados localmente no celular.

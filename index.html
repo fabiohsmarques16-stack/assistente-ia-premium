@@ -8,561 +8,147 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Assistente IA" />
-  <title>Assistente IA Premium</title>
-
+  <title>Assistente IA Premium V2</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-
   <style>
-    :root {
-      --bg: #071116;
-      --card: rgba(17, 31, 39, 0.72);
-      --border: rgba(112, 235, 255, 0.18);
-      --text: #e8f4f7;
-      --muted: #8ea1a8;
-      --cyan: #35d7f5;
-      --green: #42f59e;
-      --shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+    :root{
+      --bg:#071116;--panel:rgba(17,31,39,.74);--panel2:rgba(10,22,29,.82);
+      --line:rgba(112,235,255,.16);--text:#e8f4f7;--muted:#8ea1a8;
+      --cyan:#35d7f5;--green:#42f59e;--warn:#ffbf6b;--red:#ff6b7a;
+      --shadow:0 24px 80px rgba(0,0,0,.42)
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html, body {
-      min-height: 100%;
-      background: #050b10;
-      overscroll-behavior-y: none;
-    }
-
-    body {
-      min-height: 100vh;
-      min-height: 100dvh;
-      background:
-        radial-gradient(circle at top left, rgba(53, 215, 245, 0.14), transparent 34%),
-        radial-gradient(circle at bottom right, rgba(66, 245, 158, 0.10), transparent 30%),
-        linear-gradient(145deg, #050b10, #071116 48%, #081a17);
-      color: var(--text);
-      overflow-x: hidden;
-    }
-
-    .app-shell {
-      width: min(430px, 100%);
-      min-height: 100vh;
-      min-height: 100dvh;
-      margin: 0 auto;
-      position: relative;
-      padding: calc(18px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom));
-      background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01));
-      border-left: 1px solid rgba(255,255,255,0.05);
-      border-right: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .glass {
-      background: var(--card);
-      border: 1px solid var(--border);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-      box-shadow: var(--shadow);
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      margin-bottom: 18px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo {
-      width: 48px;
-      height: 48px;
-      border-radius: 17px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(145deg, rgba(53,215,245,.22), rgba(66,245,158,.08));
-      border: 1px solid rgba(53,215,245,.24);
-      color: var(--cyan);
-      font-size: 25px;
-      box-shadow: inset 0 0 24px rgba(53,215,245,.08);
-    }
-
-    .brand h1 {
-      font-size: 17px;
-      line-height: 1.15;
-      letter-spacing: -0.02em;
-    }
-
-    .brand p {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 3px;
-    }
-
-    .avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      color: #041015;
-      background: linear-gradient(135deg, var(--cyan), var(--green));
-      font-weight: 800;
-      letter-spacing: -0.04em;
-    }
-
-    .install-banner {
-      display: none;
-      margin-bottom: 14px;
-      padding: 13px;
-      border-radius: 20px;
-      background: rgba(53,215,245,.10);
-      border: 1px solid rgba(53,215,245,.18);
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .install-banner.show { display: flex; }
-    .install-banner p { font-size: 12px; color: #bdeef6; line-height: 1.35; }
-    .install-banner button { padding: 9px 12px; border-radius: 13px; font-size: 12px; white-space: nowrap; }
-
-    .hero {
-      padding: 22px;
-      border-radius: 30px;
-      margin-bottom: 18px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::after {
-      content: "";
-      position: absolute;
-      width: 190px;
-      height: 190px;
-      right: -70px;
-      top: -80px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(53,215,245,.28), transparent 66%);
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 10px;
-      border-radius: 999px;
-      background: rgba(53,215,245,.10);
-      border: 1px solid rgba(53,215,245,.18);
-      color: #a9f3ff;
-      font-size: 12px;
-      margin-bottom: 14px;
-    }
-
-    .pulse {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: var(--green);
-      box-shadow: 0 0 0 6px rgba(66,245,158,.10);
-    }
-
-    .hero h2 {
-      max-width: 285px;
-      font-size: 30px;
-      line-height: 1.04;
-      letter-spacing: -0.055em;
-      margin-bottom: 12px;
-      position: relative;
-      z-index: 2;
-    }
-
-    .hero p {
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.55;
-      max-width: 315px;
-      margin-bottom: 18px;
-      position: relative;
-      z-index: 2;
-    }
-
-    .cta-row {
-      display: grid;
-      grid-template-columns: 1fr 48px;
-      gap: 10px;
-      position: relative;
-      z-index: 2;
-    }
-
-    button {
-      border: 0;
-      cursor: pointer;
-      font-weight: 700;
-      color: inherit;
-      background: transparent;
-    }
-
-    .primary-btn {
-      height: 48px;
-      border-radius: 17px;
-      background: linear-gradient(135deg, var(--cyan), #4fffc1);
-      color: #031216;
-      box-shadow: 0 16px 34px rgba(53,215,245,.20);
-    }
-
-    .icon-btn {
-      height: 48px;
-      width: 48px;
-      border-radius: 17px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.10);
-      color: var(--cyan);
-      font-size: 20px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .stat-card {
-      padding: 14px 12px;
-      border-radius: 22px;
-      background: rgba(255,255,255,.045);
-      border: 1px solid rgba(255,255,255,.075);
-    }
-
-    .stat-card strong {
-      display: block;
-      font-size: 19px;
-      margin-bottom: 3px;
-    }
-
-    .stat-card span {
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .section-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin: 20px 2px 12px;
-    }
-
-    .section-title h3 {
-      font-size: 16px;
-      letter-spacing: -0.02em;
-    }
-
-    .section-title a {
-      color: var(--cyan);
-      text-decoration: none;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .modules {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 11px;
-    }
-
-    .module {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      min-height: 76px;
-      padding: 14px;
-      border-radius: 24px;
-      background: rgba(13, 25, 32, 0.78);
-      border: 1px solid rgba(255,255,255,.075);
-      transition: .18s ease;
-    }
-
-    .module:active { transform: scale(.985); }
-
-    .module-icon {
-      width: 50px;
-      height: 50px;
-      flex: 0 0 50px;
-      border-radius: 18px;
-      display: grid;
-      place-items: center;
-      background: rgba(53,215,245,.095);
-      border: 1px solid rgba(53,215,245,.13);
-      color: var(--cyan);
-      font-size: 24px;
-    }
-
-    .module-content { flex: 1; min-width: 0; }
-    .module-content h4 { font-size: 15px; margin-bottom: 4px; letter-spacing: -0.02em; }
-    .module-content p { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .module-badge {
-      font-size: 11px;
-      padding: 6px 8px;
-      border-radius: 999px;
-      color: #bff6ff;
-      background: rgba(53,215,245,.10);
-      border: 1px solid rgba(53,215,245,.13);
-    }
-
-    .assistant-card {
-      margin-top: 18px;
-      border-radius: 26px;
-      padding: 16px;
-      background: linear-gradient(145deg, rgba(53,215,245,.10), rgba(255,255,255,.04));
-      border: 1px solid rgba(53,215,245,.14);
-    }
-
-    .assistant-card .row { display: flex; gap: 12px; align-items: flex-start; }
-    .assistant-card h4 { font-size: 15px; margin-bottom: 5px; }
-    .assistant-card p { font-size: 13px; color: var(--muted); line-height: 1.45; }
-
-    .bottom-nav {
-      position: fixed;
-      left: 50%;
-      bottom: calc(16px + env(safe-area-inset-bottom));
-      transform: translateX(-50%);
-      width: min(398px, calc(100% - 28px));
-      height: 70px;
-      border-radius: 25px;
-      background: rgba(8, 19, 25, .86);
-      border: 1px solid rgba(112,235,255,.18);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      padding: 8px;
-      z-index: 20;
-      box-shadow: 0 18px 60px rgba(0,0,0,.45);
-    }
-
-    .nav-item {
-      display: grid;
-      place-items: center;
-      color: var(--muted);
-      border-radius: 18px;
-      font-size: 21px;
-    }
-
-    .nav-item.active {
-      color: #041015;
-      background: linear-gradient(135deg, var(--cyan), var(--green));
-    }
-
-    .screen { display: none; animation: fade .22s ease both; }
-    .screen.active { display: block; }
-
-    @keyframes fade {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .list-panel {
-      border-radius: 26px;
-      padding: 14px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.07);
-    }
-
-    .task {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 4px;
-      border-bottom: 1px solid rgba(255,255,255,.06);
-    }
-
-    .task:last-child { border-bottom: 0; }
-
-    .check {
-      width: 22px;
-      height: 22px;
-      border-radius: 8px;
-      border: 1px solid rgba(53,215,245,.35);
-      background: rgba(53,215,245,.08);
-    }
-
-    .task.done .check { background: linear-gradient(135deg, var(--cyan), var(--green)); border: 0; }
-    .task div:nth-child(2) { flex: 1; }
-    .task strong { display: block; font-size: 14px; }
-    .task span { font-size: 12px; color: var(--muted); }
-
-    .money-card {
-      border-radius: 26px;
-      padding: 18px;
-      background: linear-gradient(145deg, rgba(66,245,158,.12), rgba(53,215,245,.06));
-      border: 1px solid rgba(66,245,158,.16);
-      margin-bottom: 12px;
-    }
-
-    .money-card span { color: var(--muted); font-size: 12px; }
-    .money-card strong { display:block; font-size: 34px; margin: 4px 0 8px; letter-spacing: -0.05em; }
-
-    .progress { height: 9px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
-    .progress i { display: block; height: 100%; width: 68%; background: linear-gradient(90deg, var(--cyan), var(--green)); border-radius: inherit; }
-
-    .input-box {
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: 1fr 48px;
-      gap: 10px;
-    }
-
-    .input-box input {
-      height: 48px;
-      border-radius: 17px;
-      border: 1px solid rgba(255,255,255,.09);
-      background: rgba(255,255,255,.045);
-      color: var(--text);
-      padding: 0 14px;
-      outline: none;
-    }
-
-    .input-box input::placeholder { color: #6f838a; }
-
-    .offline-chip {
-      position: fixed;
-      top: calc(10px + env(safe-area-inset-top));
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 50;
-      display: none;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(255,184,107,.16);
-      border: 1px solid rgba(255,184,107,.28);
-      color: #ffd3a6;
-      font-size: 12px;
-      backdrop-filter: blur(14px);
-    }
-    .offline-chip.show { display: block; }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-tap-highlight-color:transparent}
+    body{min-height:100vh;min-height:100dvh;color:var(--text);background:radial-gradient(circle at top left,rgba(53,215,245,.14),transparent 34%),radial-gradient(circle at bottom right,rgba(66,245,158,.10),transparent 30%),linear-gradient(145deg,#050b10,#071116 48%,#081a17);overflow-x:hidden}
+    button,input,textarea,select{font:inherit}
+    button{border:0;cursor:pointer;color:inherit;background:transparent}
+    .app{width:min(430px,100%);min-height:100vh;min-height:100dvh;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom));border-left:1px solid rgba(255,255,255,.05);border-right:1px solid rgba(255,255,255,.05)}
+    .screen{display:none;animation:fade .2s ease both}.screen.active{display:block}@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:26px;box-shadow:var(--shadow);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.brand{display:flex;gap:12px;align-items:center}
+    .logo,.avatar,.mi{display:grid;place-items:center;background:linear-gradient(145deg,rgba(53,215,245,.22),rgba(66,245,158,.08));border:1px solid rgba(53,215,245,.22);color:var(--cyan)}
+    .logo{width:48px;height:48px;border-radius:17px;font-size:24px}.avatar{width:42px;height:42px;border-radius:50%;font-weight:800;color:#041015;background:linear-gradient(135deg,var(--cyan),var(--green))}
+    h1{font-size:17px;line-height:1.15} .sub{font-size:12px;color:var(--muted);margin-top:3px}
+    .login{min-height:100dvh;display:grid;align-content:center;gap:14px}.login .hero{padding:26px;border-radius:32px}
+    .hero{position:relative;overflow:hidden;padding:22px;margin-bottom:16px}.hero:after{content:"";position:absolute;width:190px;height:190px;right:-70px;top:-80px;border-radius:50%;background:radial-gradient(circle,rgba(53,215,245,.28),transparent 66%)}
+    .hero h2{font-size:30px;line-height:1.04;letter-spacing:-.055em;margin-bottom:10px;position:relative;z-index:1}.hero p{color:var(--muted);font-size:14px;line-height:1.55;position:relative;z-index:1}
+    .field{display:grid;gap:7px;margin-top:12px}.field label{font-size:12px;color:var(--muted);font-weight:700}
+    .input{width:100%;height:48px;border-radius:17px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.045);color:var(--text);padding:0 14px;outline:none}
+    textarea.input{height:100px;padding:14px;resize:none}
+    .btn{height:48px;border-radius:17px;font-weight:800;background:linear-gradient(135deg,var(--cyan),#4fffc1);color:#031216;box-shadow:0 16px 34px rgba(53,215,245,.20)}
+    .btn2{height:48px;border-radius:17px;font-weight:800;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:var(--cyan)}
+    .row{display:flex;gap:10px}.row>*{flex:1}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}.stat{padding:14px 12px;border-radius:22px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.075)}.stat b{font-size:19px;display:block}.stat span{font-size:11px;color:var(--muted)}
+    .section{display:flex;align-items:center;justify-content:space-between;margin:18px 2px 10px}.section h3{font-size:16px}.section button{font-size:12px;color:var(--cyan);font-weight:800}
+    .list{display:grid;gap:11px}.module{display:flex;align-items:center;gap:14px;min-height:76px;padding:14px;border-radius:24px;background:rgba(13,25,32,.78);border:1px solid rgba(255,255,255,.075)}
+    .mi{width:50px;height:50px;flex:0 0 50px;border-radius:18px;font-size:23px}.module h4{font-size:15px;margin-bottom:4px}.module p{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.badge{font-size:11px;padding:6px 8px;border-radius:999px;color:#bff6ff;background:rgba(53,215,245,.10);border:1px solid rgba(53,215,245,.13)}
+    .nav{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(398px,calc(100% - 28px));height:70px;border-radius:25px;background:rgba(8,19,25,.88);border:1px solid rgba(112,235,255,.18);backdrop-filter:blur(22px);display:grid;grid-template-columns:repeat(5,1fr);padding:8px;z-index:20;box-shadow:0 18px 60px rgba(0,0,0,.45)}
+    .nav button{display:grid;place-items:center;color:var(--muted);border-radius:18px;font-size:21px}.nav button.active{color:#041015;background:linear-gradient(135deg,var(--cyan),var(--green))}
+    .chip{display:inline-flex;gap:6px;align-items:center;padding:7px 10px;border-radius:999px;background:rgba(53,215,245,.10);border:1px solid rgba(53,215,245,.18);color:#a9f3ff;font-size:12px;margin-bottom:13px}
+    .dot{width:7px;height:7px;border-radius:999px;background:var(--green);box-shadow:0 0 0 6px rgba(66,245,158,.10)}
+    .msg{padding:13px;border-radius:18px;margin:8px 0;line-height:1.45;font-size:13px}.user{background:rgba(53,215,245,.12);margin-left:28px}.ai{background:rgba(255,255,255,.055);margin-right:28px}
+    .status{font-size:11px;color:var(--muted);padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07)}
+    .money{padding:18px;margin-bottom:12px;background:linear-gradient(145deg,rgba(66,245,158,.12),rgba(53,215,245,.06));border:1px solid rgba(66,245,158,.16)}.money strong{font-size:34px;display:block;letter-spacing:-.05em}.bar{height:9px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;width:68%;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--green))}
+    .hidden{display:none!important}.toast{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:50;max-width:390px;width:calc(100% - 28px);padding:12px 14px;border-radius:18px;background:rgba(8,19,25,.94);border:1px solid var(--line);color:#d9faff;font-size:13px;display:none}.toast.show{display:block}
   </style>
 </head>
 <body>
-  <div id="offlineChip" class="offline-chip">Modo offline ativo</div>
+<div id="toast" class="toast"></div>
 
-  <main class="app-shell">
-    <section id="home" class="screen active">
-      <div class="topbar">
-        <div class="brand">
-          <div class="logo">✦</div>
-          <div>
-            <h1>Assistente IA</h1>
-            <p>Central pessoal inteligente</p>
-          </div>
-        </div>
-        <div class="avatar">FM</div>
-      </div>
+<main id="loginScreen" class="app login">
+  <div class="brand"><div class="logo">✦</div><div><h1>Assistente IA Premium</h1><p class="sub">Login, nuvem, banco de dados e IA</p></div></div>
+  <section class="hero card">
+    <span class="chip"><span class="dot"></span> V2 profissional</span>
+    <h2>Sua central inteligente pessoal.</h2>
+    <p>Entre para sincronizar tarefas, hábitos, finanças, projetos e conversas da IA.</p>
+    <div class="field"><label>E-mail</label><input id="email" class="input" placeholder="seuemail@gmail.com" /></div>
+    <div class="field"><label>Senha</label><input id="password" class="input" type="password" placeholder="mínimo 6 caracteres" /></div>
+    <div class="row" style="margin-top:14px"><button id="loginBtn" class="btn">Entrar</button><button id="registerBtn" class="btn2">Criar conta</button></div>
+    <button id="demoBtn" class="btn2" style="width:100%;margin-top:10px">Entrar em modo demonstração</button>
+  </section>
+</main>
 
-      <div id="installBanner" class="install-banner">
-        <p><strong>Instalar app</strong><br>Adicione na tela inicial para usar como aplicativo.</p>
-        <button id="installBtn" class="primary-btn">Instalar</button>
-      </div>
-
-      <div class="hero glass">
-        <div class="eyebrow"><span class="pulse"></span> IA ativa agora</div>
-        <h2>Organize sua rotina, projetos e dinheiro.</h2>
-        <p>Um painel inteligente para decisões, lembretes, tarefas, hábitos, finanças e base de conhecimento pessoal.</p>
-        <div class="cta-row">
-          <button class="primary-btn" data-open="ai">Abrir assistente</button>
-          <button class="icon-btn" data-open="tasks">＋</button>
-        </div>
-      </div>
-
-      <div class="stats">
-        <div class="stat-card"><strong>12</strong><span>Tarefas hoje</span></div>
-        <div class="stat-card"><strong>86%</strong><span>Hábitos</span></div>
-        <div class="stat-card"><strong>R$ 4,8k</strong><span>Saldo mês</span></div>
-      </div>
-
-      <div class="section-title">
-        <h3>Módulos principais</h3>
-        <a href="#">Ver todos</a>
-      </div>
-
-      <div class="modules">
-        <article class="module" data-open="ai"><div class="module-icon">🧠</div><div class="module-content"><h4>IA conversacional ilimitada</h4><p>Converse, planeje e tome decisões com apoio da IA.</p></div><span class="module-badge">IA</span></article>
-        <article class="module" data-open="tasks"><div class="module-icon">☑</div><div class="module-content"><h4>Tarefas e projetos sem limite</h4><p>Organize demandas pessoais, trabalho e negócios.</p></div><span class="module-badge">12</span></article>
-        <article class="module" data-open="finance"><div class="module-icon">$</div><div class="module-content"><h4>Controle financeiro completo</h4><p>Receitas, despesas, metas e análise mensal.</p></div><span class="module-badge">68%</span></article>
-        <article class="module" data-open="habits"><div class="module-icon">◎</div><div class="module-content"><h4>Hábitos com streaks e análise</h4><p>Acompanhe sequência, falhas e consistência.</p></div><span class="module-badge">7 dias</span></article>
-        <article class="module"><div class="module-icon">🔔</div><div class="module-content"><h4>Lembretes inteligentes</h4><p>Alertas por prioridade, prazo e contexto.</p></div><span class="module-badge">3</span></article>
-        <article class="module"><div class="module-icon">📁</div><div class="module-content"><h4>Gestão de projetos</h4><p>Kanban, etapas, prioridades e histórico.</p></div><span class="module-badge">Novo</span></article>
-        <article class="module"><div class="module-icon">📖</div><div class="module-content"><h4>Base de conhecimento pessoal</h4><p>Guarde ideias, arquivos, notas e aprendizados.</p></div><span class="module-badge">Base</span></article>
-        <article class="module"><div class="module-icon">✧</div><div class="module-content"><h4>Análises e insights avançados</h4><p>Relatórios automáticos para melhorar sua rotina.</p></div><span class="module-badge">Pro</span></article>
-      </div>
-
-      <div class="assistant-card">
-        <div class="row">
-          <div class="module-icon">🤖</div>
-          <div>
-            <h4>Insight do dia</h4>
-            <p>Você está com boa evolução nos hábitos, mas as tarefas atrasadas aumentaram. Priorize 3 ações críticas hoje.</p>
-          </div>
-        </div>
-      </div>
+<main id="appScreen" class="app hidden">
+  <section id="home" class="screen active">
+    <div class="top"><div class="brand"><div class="logo">✦</div><div><h1>Assistente IA</h1><p id="syncStatus" class="sub">Banco local ativo</p></div></div><button id="logoutBtn" class="avatar">FM</button></div>
+    <section class="hero card">
+      <span class="chip"><span class="dot"></span> Dashboard inteligente</span>
+      <h2>Rotina, projetos, dinheiro e IA em um só lugar.</h2>
+      <p>Estrutura pronta para Firebase, Firestore, notificações, sincronização e integração com IA.</p>
+      <div class="row" style="position:relative;z-index:1;margin-top:16px"><button data-open="ai" class="btn">Abrir IA</button><button id="notifyBtn" class="btn2">Notificar</button></div>
     </section>
+    <div class="grid3">
+      <div class="stat"><b id="taskCount">0</b><span>Tarefas</span></div>
+      <div class="stat"><b id="habitRate">0%</b><span>Hábitos</span></div>
+      <div class="stat"><b id="monthBalance">R$ 0</b><span>Saldo</span></div>
+    </div>
+    <div class="section"><h3>Central estilo Notion/ClickUp</h3><button data-open="tasks">Nova tarefa</button></div>
+    <div class="list">
+      <article class="module" data-open="ai"><div class="mi">🧠</div><div><h4>IA integrada</h4><p>Via endpoint seguro configurável.</p></div><span class="badge">API</span></article>
+      <article class="module" data-open="tasks"><div class="mi">☑</div><div><h4>Tarefas e projetos</h4><p>Banco local com sincronização em nuvem.</p></div><span class="badge">DB</span></article>
+      <article class="module" data-open="finance"><div class="mi">$</div><div><h4>Financeiro</h4><p>Receitas, despesas e visão mensal.</p></div><span class="badge">DRE</span></article>
+      <article class="module" data-open="habits"><div class="mi">◎</div><div><h4>Hábitos</h4><p>Streaks e análise de consistência.</p></div><span class="badge">Streak</span></article>
+      <article class="module" data-open="cloud"><div class="mi">☁</div><div><h4>Sincronização</h4><p>Firestore quando Firebase for configurado.</p></div><span class="badge">Cloud</span></article>
+    </div>
+  </section>
 
-    <section id="tasks" class="screen">
-      <div class="topbar"><div class="brand"><div class="logo">☑</div><div><h1>Tarefas</h1><p>Prioridades do dia</p></div></div><button class="icon-btn">＋</button></div>
-      <div class="list-panel">
-        <div class="task done"><div class="check"></div><div><strong>Revisar pedidos do dia</strong><span>Concluído às 08:40</span></div></div>
-        <div class="task"><div class="check"></div><div><strong>Responder clientes pendentes</strong><span>Alta prioridade</span></div></div>
-        <div class="task"><div class="check"></div><div><strong>Planejar produção semanal</strong><span>Hoje, 17:00</span></div></div>
+  <section id="tasks" class="screen">
+    <div class="top"><div class="brand"><div class="logo">☑</div><div><h1>Tarefas</h1><p class="sub">Projetos, demandas e prioridades</p></div></div></div>
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <div class="field" style="margin-top:0"><label>Nova tarefa</label><input id="taskInput" class="input" placeholder="Ex: responder cliente do letreiro" /></div>
+      <button id="addTaskBtn" class="btn" style="width:100%;margin-top:10px">Adicionar tarefa</button>
+    </div>
+    <div id="taskList" class="list"></div>
+  </section>
+
+  <section id="finance" class="screen">
+    <div class="top"><div class="brand"><div class="logo">$</div><div><h1>Financeiro</h1><p class="sub">Controle financeiro completo</p></div></div></div>
+    <div class="money card"><span class="sub">Resultado previsto no mês</span><strong id="financeTotal">R$ 0</strong><div class="bar"><i></i></div></div>
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <div class="row">
+        <input id="financeDesc" class="input" placeholder="Descrição" />
+        <input id="financeValue" class="input" type="number" placeholder="Valor" />
       </div>
-    </section>
+      <div class="row" style="margin-top:10px"><button id="addIncomeBtn" class="btn">Receita</button><button id="addExpenseBtn" class="btn2">Despesa</button></div>
+    </div>
+    <div id="financeList" class="list"></div>
+  </section>
 
-    <section id="finance" class="screen">
-      <div class="topbar"><div class="brand"><div class="logo">$</div><div><h1>Financeiro</h1><p>Resumo inteligente</p></div></div><button class="icon-btn">＋</button></div>
-      <div class="money-card">
-        <span>Lucro previsto no mês</span>
-        <strong>R$ 4.820</strong>
-        <div class="progress"><i></i></div>
-      </div>
-      <div class="modules">
-        <article class="module"><div class="module-icon">↗</div><div class="module-content"><h4>Receitas</h4><p>R$ 8.950 lançados</p></div><span class="module-badge">+12%</span></article>
-        <article class="module"><div class="module-icon">↘</div><div class="module-content"><h4>Despesas</h4><p>R$ 4.130 no período</p></div><span class="module-badge">OK</span></article>
-      </div>
-    </section>
+  <section id="habits" class="screen">
+    <div class="top"><div class="brand"><div class="logo">◎</div><div><h1>Hábitos</h1><p class="sub">Streaks e análise</p></div></div></div>
+    <div class="card" style="padding:14px;margin-bottom:12px">
+      <input id="habitInput" class="input" placeholder="Novo hábito. Ex: caminhada" />
+      <button id="addHabitBtn" class="btn" style="width:100%;margin-top:10px">Adicionar hábito</button>
+    </div>
+    <div id="habitList" class="list"></div>
+  </section>
 
-    <section id="habits" class="screen">
-      <div class="topbar"><div class="brand"><div class="logo">◎</div><div><h1>Hábitos</h1><p>Streaks e consistência</p></div></div><button class="icon-btn">＋</button></div>
-      <div class="modules">
-        <article class="module"><div class="module-icon">🔥</div><div class="module-content"><h4>Exercício</h4><p>Sequência de 7 dias</p></div><span class="module-badge">86%</span></article>
-        <article class="module"><div class="module-icon">💧</div><div class="module-content"><h4>Água</h4><p>Meta diária em andamento</p></div><span class="module-badge">2/3L</span></article>
-      </div>
-    </section>
+  <section id="ai" class="screen">
+    <div class="top"><div class="brand"><div class="logo">🧠</div><div><h1>IA Integrada</h1><p class="sub">Endpoint seguro configurável</p></div></div></div>
+    <div id="chatBox" class="card" style="padding:14px;min-height:280px;margin-bottom:12px">
+      <div class="msg ai">Olá, Fabio. Posso analisar tarefas, finanças, hábitos e projetos. A integração real com IA exige um endpoint seguro no backend.</div>
+    </div>
+    <div class="row"><input id="aiInput" class="input" placeholder="Digite para a IA..." /><button id="sendAiBtn" class="btn" style="flex:0 0 56px">➜</button></div>
+  </section>
 
-    <section id="ai" class="screen">
-      <div class="topbar"><div class="brand"><div class="logo">🧠</div><div><h1>Assistente IA</h1><p>Conversa inteligente</p></div></div></div>
-      <div class="assistant-card"><h4>Como posso ajudar agora?</h4><p>Exemplo: “analise minhas tarefas e diga o que devo priorizar hoje”.</p></div>
-      <div class="input-box"><input placeholder="Digite uma mensagem para a IA..." /><button class="primary-btn">➜</button></div>
-    </section>
-  </main>
+  <section id="cloud" class="screen">
+    <div class="top"><div class="brand"><div class="logo">☁</div><div><h1>Nuvem</h1><p class="sub">Firebase/Firestore</p></div></div></div>
+    <div class="card" style="padding:16px">
+      <h3>Status</h3>
+      <p id="cloudText" class="sub" style="line-height:1.55;margin-top:8px">Modo local ativo. Para nuvem real, configure o Firebase no arquivo firebase-config.js.</p>
+      <button id="syncBtn" class="btn" style="width:100%;margin-top:14px">Sincronizar agora</button>
+    </div>
+  </section>
+</main>
 
-  <nav class="bottom-nav">
-    <button class="nav-item active" data-screen="home">⌂</button>
-    <button class="nav-item" data-screen="tasks">☑</button>
-    <button class="nav-item" data-screen="finance">$</button>
-    <button class="nav-item" data-screen="habits">◎</button>
-    <button class="nav-item" data-screen="ai">✦</button>
-  </nav>
+<nav id="nav" class="nav hidden">
+  <button class="active" data-screen="home">⌂</button>
+  <button data-screen="tasks">☑</button>
+  <button data-screen="finance">$</button>
+  <button data-screen="habits">◎</button>
+  <button data-screen="ai">✦</button>
+</nav>
 
-  <script src="app.js"></script>
+<script src="firebase-config.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
