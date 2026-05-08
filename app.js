@@ -1,7 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
 const $ = (q) => document.querySelector(q);
 const $$ = (q) => Array.from(document.querySelectorAll(q));
 const uid = () => crypto?.randomUUID?.() || String(Date.now() + Math.random());
@@ -36,6 +32,9 @@ let activeTaskFilter = 'all';
 let activeFinanceFilter = 'all';
 let recognition = null;
 let listening = false;
+let fb = {};
+window.addEventListener('error', (e) => { console.error(e.error || e.message); toast('Erro no aplicativo: ' + (e.message || 'verifique o console')); });
+window.addEventListener('unhandledrejection', (e) => { console.error(e.reason); toast('Falha no aplicativo: ' + ((e.reason && e.reason.message) || e.reason || 'erro desconhecido')); });
 
 function toast(msg) {
   const el = $('#toast') || document.createElement('div');
@@ -54,13 +53,13 @@ function loadLocal() { try { normalizeData(JSON.parse(localStorage.getItem(stora
 async function saveCloud() {
   saveLocal();
   if (firebaseReady && currentUser && !demoMode) {
-    await setDoc(doc(db, 'users', currentUser.uid), { data: state, updatedAt: new Date().toISOString() }, { merge: true });
+    await fb.setDoc(fb.doc(db, 'users', currentUser.uid), { data: state, updatedAt: new Date().toISOString() }, { merge: true });
   }
 }
 async function loadCloud() {
   loadLocal();
   if (firebaseReady && currentUser && !demoMode) {
-    const snap = await getDoc(doc(db, 'users', currentUser.uid));
+    const snap = await fb.getDoc(fb.doc(db, 'users', currentUser.uid));
     if (snap.exists() && snap.data().data) normalizeData(snap.data().data);
     else await saveCloud();
   }
@@ -69,12 +68,20 @@ async function loadCloud() {
 async function initFirebase() {
   try {
     if (!window.FIREBASE_CONFIG || !window.FIREBASE_CONFIG.apiKey || window.FIREBASE_CONFIG.apiKey.includes('SUA_')) throw new Error('Firebase sem configuração');
-    const app = initializeApp(window.FIREBASE_CONFIG);
-    auth = getAuth(app);
-    db = getFirestore(app);
+    const [appMod, authMod, fsMod] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js')
+    ]);
+    fb = { ...appMod, ...authMod, ...fsMod };
+    const app = fb.initializeApp(window.FIREBASE_CONFIG);
+    auth = fb.getAuth(app);
+    db = fb.getFirestore(app);
     firebaseReady = true;
-    onAuthStateChanged(auth, async (user) => { if (user) { currentUser = user; demoMode = false; await enterApp(); } });
-  } catch {
+    fb.onAuthStateChanged(auth, async (user) => { if (user) { currentUser = user; demoMode = false; await enterApp(); } });
+    setText('#syncStatus', 'Firebase pronto');
+  } catch (err) {
+    console.warn('Firebase desativado:', err);
     firebaseReady = false;
     setText('#syncStatus', 'Modo local disponível');
   }
@@ -82,6 +89,7 @@ async function initFirebase() {
 
 async function enterApp() {
   await loadCloud();
+  normalizeData(state);
   $('#loginScreen')?.classList.add('hidden');
   $('#appScreen')?.classList.remove('hidden');
   $('#bottomNav')?.classList.remove('hidden');
@@ -102,8 +110,8 @@ function validateLogin() {
   if (pass.length < 6) throw new Error('A senha precisa ter no mínimo 6 caracteres.');
   return { email, pass };
 }
-async function login() { try { const { email, pass } = validateLogin(); if (!firebaseReady) throw new Error('Firebase não inicializado. Configure o Firebase ou use o modo demonstração.'); await signInWithEmailAndPassword(auth, email, pass); } catch (e) { toast(firebaseMsg(e)); } }
-async function register() { try { const { email, pass } = validateLogin(); if (!firebaseReady) throw new Error('Firebase não inicializado. Configure o Firebase ou use o modo demonstração.'); await createUserWithEmailAndPassword(auth, email, pass); } catch (e) { toast(firebaseMsg(e)); } }
+async function login() { try { const { email, pass } = validateLogin(); if (!firebaseReady) throw new Error('Firebase não inicializado. Configure o Firebase ou use o modo demonstração.'); await fb.signInWithEmailAndPassword(auth, email, pass); } catch (e) { toast(firebaseMsg(e)); } }
+async function register() { try { const { email, pass } = validateLogin(); if (!firebaseReady) throw new Error('Firebase não inicializado. Configure o Firebase ou use o modo demonstração.'); await fb.createUserWithEmailAndPassword(auth, email, pass); } catch (e) { toast(firebaseMsg(e)); } }
 function firebaseMsg(e) {
   const code = e?.code || '';
   if (code.includes('email-already-in-use')) return 'Este e-mail já tem conta. Use Entrar.';
@@ -116,9 +124,10 @@ function firebaseMsg(e) {
 
 function setText(q, v) { const el = $(q); if (el) el.textContent = v; }
 function showScreen(id) {
+  const target = $('#' + id) || $('#home');
   $$('.screen').forEach(s => s.classList.remove('active'));
-  $('#' + id)?.classList.add('active');
-  $$('#bottomNav button').forEach(b => b.classList.toggle('active', b.dataset.screen === id));
+  target?.classList.add('active');
+  $$('#bottomNav button').forEach(b => b.classList.toggle('active', b.dataset.screen === (target?.id || id)));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function renderAll() { renderHome(); renderTasks(activeTaskFilter); renderFinance(activeFinanceFilter); renderHabits(); renderFocus(); renderChat(); }
@@ -276,7 +285,7 @@ function bind() {
   $('#loginBtn')?.addEventListener('click', login);
   $('#registerBtn')?.addEventListener('click', register);
   $('#demoBtn')?.addEventListener('click', async () => { demoMode = true; currentUser = null; await enterApp(); toast('Modo demonstração ativado. Dados salvos neste aparelho.'); });
-  $('#logoutBtn')?.addEventListener('click', async () => { try { if (auth) await signOut(auth); } catch {} exitApp(); });
+  $('#logoutBtn')?.addEventListener('click', async () => { try { if (auth && fb.signOut) await fb.signOut(auth); } catch {} exitApp(); });
   $('#modalClose')?.addEventListener('click', closeModal);
   $('#sendAiBtn')?.addEventListener('click', () => handleAiMessage($('#aiInput')?.value || ''));
   $('#aiInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleAiMessage($('#aiInput')?.value || ''); });
@@ -305,7 +314,11 @@ function bind() {
   });
 }
 
-bind();
-setupVoice();
-initFirebase();
-renderAll();
+document.addEventListener('DOMContentLoaded', () => {
+  bind();
+  setupVoice();
+  initFirebase();
+  renderAll();
+  // Segurança visual: se o app estiver aberto sem tela ativa, volta para a Home.
+  setTimeout(() => { if (!$('#loginScreen')?.classList.contains('hidden')) return; if (!$('.screen.active')) showScreen('home'); }, 300);
+});

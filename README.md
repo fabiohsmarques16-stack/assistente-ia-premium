@@ -1,26 +1,15 @@
-# Assistente IA Premium V3.6 Voz
+# Assistente IA Premium V3.7 Voz Corrigido
 
-Melhorias aplicadas:
+Correções principais:
+- remove importação estática do Firebase para evitar tela em branco quando a rede/CDN falha;
+- navegação de retorno para Home em Tarefas, Financeiro, Hábitos, Foco e IA;
+- comando de voz para criar tarefas, despesas e receitas;
+- resposta por áudio usando SpeechSynthesis;
+- service worker com novo cache v3.7 e estratégia network-first para GitHub Pages;
+- proteção contra tela sem seção ativa.
 
-- Correção do login/entrada no aplicativo: `appScreen` agora é chamado corretamente.
-- Correção do botão de enviar mensagem para a IA.
-- Botão de voltar para a tela inicial em Tarefas, Financeiro, Hábitos, Modo Foco, IA e Configurações.
-- Botão de voz na IA usando reconhecimento de fala do navegador.
-- Comandos locais por voz/texto para criar tarefas, registrar despesas e registrar receitas.
-- Resposta por áudio com síntese de voz quando o comando é falado.
-- Correção dos cards do dashboard e dos insights automáticos.
-- Exclusão/edição de tarefas, receitas, despesas e hábitos funcionando.
-- Exportação/importação de backup JSON.
-- Aviso quando os dados estiverem apenas locais.
-- Service Worker atualizado para V3.6, evitando cache antigo.
-
-Exemplos de comandos por voz:
-
-- "Crie uma tarefa comprar etiquetas amanhã"
-- "Registre despesa de 35 reais com acrílico"
-- "Registre receita de 120 reais venda de pudim"
-- "Analise meu dia"
-
-Observação importante:
-
-O reconhecimento de voz funciona melhor no Chrome Android e normalmente precisa de HTTPS ou localhost. Se abrir direto por arquivo local, o microfone pode não funcionar por regra do navegador.
+## Importante para atualizar no GitHub Pages
+Suba os arquivos de dentro desta pasta na RAIZ do repositório, não a pasta inteira.
+Depois de publicar, abra no Chrome Android e acesse:
+Configurações do site > Dados armazenados > Limpar dados.
+Ou teste com `?v=37` no fim da URL.
