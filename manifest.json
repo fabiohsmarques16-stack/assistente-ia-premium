@@ -1,26 +1,15 @@
 {
-  "name": "Assistente IA Premium V3.7 Voz Corrigido",
-  "short_name": "IA Premium V3.7",
+  "name": "Assistente IA Premium V3.7",
+  "short_name": "Assistente IA",
   "description": "Sistema operacional pessoal com IA, voz, tarefas, hábitos, finanças, dashboard, backup e nuvem.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#071116",
-  "theme_color": "#071116",
+  "background_color": "#060d10",
+  "theme_color": "#060d10",
   "icons": [
-    {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "version": "3.7.0"
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
 }

@@ -3,46 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#071116">
+<meta name="theme-color" content="#060d10">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Assistente IA Premium V3.7 Voz Corrigido</title>
+<title>Assistente IA Premium V3.7</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="toast" class="toast"></div>
 
+<!-- LOGIN -->
 <main id="loginScreen" class="app login">
   <section class="card login-card">
-    <div class="brand big"><div class="logo">✦</div><div><h1>Assistente IA Premium</h1><p>Central inteligente pessoal V3.7 com voz corrigida</p></div></div>
+    <div class="brand big">
+      <div class="logo">✦</div>
+      <div><h1>Assistente IA Premium</h1><p>Central inteligente pessoal V3.7</p></div>
+    </div>
     <span class="chip"><i></i>Sistema operacional pessoal</span>
-    <h2>Organize sua rotina com IA, nuvem e decisões inteligentes.</h2>
-    <p class="lead">Login, tarefas, finanças, hábitos, modo foco, dashboard executivo e chat inteligente em um único aplicativo.</p>
-    <label>E-mail</label><input id="email" class="input" type="email" placeholder="seuemail@gmail.com">
-    <label>Senha</label><input id="password" class="input" type="password" placeholder="mínimo 6 caracteres">
-    <div class="row"><button id="loginBtn" class="btn primary">Entrar</button><button id="registerBtn" class="btn secondary">Criar conta</button></div>
+    <h2>Organize sua rotina com IA.</h2>
+    <p class="lead">Login, tarefas, finanças, hábitos, modo foco, dashboard e chat inteligente com voz.</p>
+    <label>E-mail</label><input id="email" class="input" type="email" placeholder="seuemail@gmail.com" autocomplete="email">
+    <label>Senha</label><input id="password" class="input" type="password" placeholder="mínimo 6 caracteres" autocomplete="current-password">
+    <div class="row">
+      <button id="loginBtn" class="btn primary">Entrar</button>
+      <button id="registerBtn" class="btn secondary">Criar conta</button>
+    </div>
     <button id="demoBtn" class="btn ghost">Entrar em modo demonstração</button>
-    <small>Com Firebase configurado, seus dados sincronizam em nuvem por usuário.</small>
+    <small>Com Firebase configurado, seus dados sincronizam em nuvem por usuário. No modo demonstração os dados ficam apenas neste aparelho.</small>
   </section>
 </main>
 
+<!-- APP -->
 <main id="appScreen" class="app hidden">
+
+  <!-- HOME -->
   <section id="home" class="screen active">
-    <header class="topbar"><div class="brand"><div class="logo">✦</div><div><h1>Assistente IA</h1><p id="syncStatus">Carregando...</p></div></div><button id="profileBtn" class="avatar" data-screen="settings">FM</button></header>
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">✦</div>
+        <div><h1>Assistente IA</h1><p id="syncStatus">Carregando...</p></div>
+      </div>
+      <button id="profileBtn" class="avatar" data-screen="settings">FM</button>
+    </header>
     <section class="card hero">
       <span class="chip"><i></i>Centro de comando</span>
       <h2 id="missionTitle">Missão do dia</h2>
       <p id="missionText">Carregando análise inteligente...</p>
-      <div class="row"><button class="btn primary" data-open="focus">Modo foco</button><button id="notifyBtn" class="btn secondary">Notificações</button></div>
+      <div class="row">
+        <button class="btn primary" data-open="focus">Modo foco</button>
+        <button id="notifyBtn" class="btn secondary">Notificações</button>
+      </div>
     </section>
     <section class="stats">
       <article><span>Tarefas</span><b id="statTasks">0</b><small id="statTasksSub">0 pendentes</small></article>
       <article><span>Hábitos</span><b id="statHabits">0%</b><small>concluídos hoje</small></article>
       <article><span>Saldo</span><b id="statMoney">R$ 0</b><small>mês atual</small></article>
     </section>
-    <section class="card panel"><div class="title"><h3>Insights automáticos</h3><button id="refreshInsightsBtn">Atualizar</button></div><div id="insightList"></div></section>
+    <section class="card panel">
+      <div class="title"><h3>Insights automáticos</h3><button id="refreshInsightsBtn">Atualizar</button></div>
+      <div id="insightList"></div>
+    </section>
     <section class="grid">
       <article class="module" data-open="tasks"><div>☑</div><main><h4>Tarefas</h4><p>CRUD completo, prioridade, prazo e status.</p></main><em>Produtividade</em></article>
       <article class="module" data-open="finance"><div>$</div><main><h4>Financeiro</h4><p>Receitas, despesas, categorias e análise.</p></main><em>Controle</em></article>
@@ -51,52 +75,127 @@
     </section>
   </section>
 
+  <!-- TASKS -->
   <section id="tasks" class="screen">
-    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">☑</div><div><h1>Tarefas</h1><p>Organize, edite e exclua</p></div></div><button class="icon" data-modal="task">＋</button></header>
-    <div class="filters"><button class="active" data-task-filter="all">Todas</button><button data-task-filter="open">Abertas</button><button data-task-filter="done">Concluídas</button><button data-task-filter="high">Alta</button></div>
+    <header class="topbar">
+      <button class="icon" data-home>⌂</button>
+      <div class="brand"><div class="logo">☑</div><div><h1>Tarefas</h1><p>Organize, edite e exclua</p></div></div>
+      <button class="icon" data-modal="task">＋</button>
+    </header>
+    <div class="filters">
+      <button class="active" data-task-filter="all">Todas</button>
+      <button data-task-filter="open">Abertas</button>
+      <button data-task-filter="done">Concluídas</button>
+      <button data-task-filter="high">Alta prioridade</button>
+    </div>
     <div id="taskList" class="list"></div>
   </section>
 
+  <!-- FINANCE -->
   <section id="finance" class="screen">
-    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">$</div><div><h1>Financeiro</h1><p>Receitas, despesas e saldo</p></div></div><button class="icon" data-modal="finance">＋</button></header>
-    <section class="card money"><span>Resultado do mês</span><strong id="financeTotal">R$ 0,00</strong><small id="incomeTotal"></small><small id="expenseTotal"></small></section>
-    <div class="filters"><button class="active" data-finance-filter="all">Tudo</button><button data-finance-filter="income">Receitas</button><button data-finance-filter="expense">Despesas</button></div>
+    <header class="topbar">
+      <button class="icon" data-home>⌂</button>
+      <div class="brand"><div class="logo">$</div><div><h1>Financeiro</h1><p>Receitas, despesas e saldo</p></div></div>
+      <button class="icon" data-modal="finance">＋</button>
+    </header>
+    <section class="card money">
+      <span>Resultado do mês</span>
+      <strong id="financeTotal">R$ 0,00</strong>
+      <small id="incomeTotal"></small>
+      <small id="expenseTotal"></small>
+    </section>
+    <div class="filters">
+      <button class="active" data-finance-filter="all">Tudo</button>
+      <button data-finance-filter="income">Receitas</button>
+      <button data-finance-filter="expense">Despesas</button>
+    </div>
     <div id="financeList" class="list"></div>
   </section>
 
+  <!-- HABITS -->
   <section id="habits" class="screen">
-    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">◎</div><div><h1>Hábitos</h1><p>Streaks e consistência</p></div></div><button class="icon" data-modal="habit">＋</button></header>
+    <header class="topbar">
+      <button class="icon" data-home>⌂</button>
+      <div class="brand"><div class="logo">◎</div><div><h1>Hábitos</h1><p id="habitDateLabel">Streaks e consistência</p></div></div>
+      <button class="icon" data-modal="habit">＋</button>
+    </header>
     <div id="habitList" class="list"></div>
   </section>
 
+  <!-- FOCUS -->
   <section id="focus" class="screen">
-    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">🎯</div><div><h1>Modo Foco</h1><p>As 3 prioridades reais</p></div></div></header>
+    <header class="topbar">
+      <button class="icon" data-home>⌂</button>
+      <div class="brand"><div class="logo">🎯</div><div><h1>Modo Foco</h1><p>As 3 prioridades reais</p></div></div>
+    </header>
     <section class="card hero"><h2>Foque no essencial.</h2><p id="focusAdvice">A IA local separa as tarefas mais importantes.</p></section>
     <div id="focusList" class="list"></div>
   </section>
 
+  <!-- AI -->
   <section id="ai" class="screen">
-    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">🧠</div><div><h1>IA Copiloto</h1><p>Digite ou fale comigo</p></div></div><button id="clearChatBtn" class="icon">⌫</button></header>
+    <header class="topbar">
+      <button class="icon" data-home>⌂</button>
+      <div class="brand"><div class="logo">🧠</div><div><h1>IA Copiloto</h1><p>Digite ou fale comigo</p></div></div>
+      <button id="clearChatBtn" class="icon">⌫</button>
+    </header>
     <div id="chatBox" class="chat card"></div>
-    <div class="prompts"><button data-prompt="Analise meu dia e diga as 3 prioridades.">Analisar dia</button><button data-prompt="Analise minhas finanças e mostre riscos.">Finanças</button><button data-prompt="Monte um plano de foco para hoje.">Plano foco</button></div>
-    <div class="chatInput voiceInput"><input id="aiInput" class="input" placeholder="Digite ou toque no microfone..."><button id="voiceBtn" class="btn secondary" title="Falar com a IA">🎙</button><button id="sendAiBtn" class="btn primary">➜</button></div>
+    <div class="prompts">
+      <button data-prompt="Analise meu dia e diga as 3 prioridades.">Analisar dia</button>
+      <button data-prompt="Analise minhas finanças e mostre riscos.">Finanças</button>
+      <button data-prompt="Monte um plano de foco para hoje.">Plano foco</button>
+    </div>
+    <div class="chatInput voiceInput">
+      <input id="aiInput" class="input" placeholder="Digite ou toque no microfone...">
+      <button id="voiceBtn" class="btn secondary" title="Falar com a IA">🎙</button>
+      <button id="sendAiBtn" class="btn primary">➜</button>
+    </div>
   </section>
 
+  <!-- SETTINGS -->
   <section id="settings" class="screen">
-    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">⚙</div><div><h1>Configurações</h1><p>Conta, nuvem e dados</p></div></div></header>
+    <header class="topbar">
+      <button class="icon" data-home>⌂</button>
+      <div class="brand"><div class="logo">⚙</div><div><h1>Configurações</h1><p>Conta, nuvem e dados</p></div></div>
+    </header>
     <div class="settings">
+      <span class="section-label">Nuvem</span>
       <button id="syncBtn"><span><b>Sincronizar agora</b><small>Força envio para nuvem</small></span><em>☁</em></button>
+
+      <span class="section-label">IA externa</span>
+      <div class="ai-endpoint-row">
+        <div><b>Endpoint da IA</b><small>URL do backend para respostas avançadas (opcional). Deixe vazio para modo local.</small></div>
+        <div class="row">
+          <input id="aiEndpointInput" class="input" type="url" placeholder="https://sua-api.com/ai">
+          <button id="saveEndpointBtn" class="btn primary" style="flex:0 0 auto;padding:0 16px">Salvar</button>
+        </div>
+      </div>
+
+      <span class="section-label">Dados</span>
       <button id="exportBtn"><span><b>Exportar backup JSON</b><small>Baixe uma cópia dos dados</small></span><em>⇩</em></button>
       <label><span><b>Importar backup JSON</b><small>Restaure dados exportados</small></span><em>⇧</em><input id="importInput" type="file" accept="application/json" hidden></label>
       <button id="resetBtn" class="danger"><span><b>Apagar dados locais</b><small>Limpa este aparelho</small></span><em>🗑</em></button>
+
+      <span class="section-label">Conta</span>
       <button id="logoutBtn"><span><b>Sair da conta</b><small>Encerrar sessão atual</small></span><em>↪</em></button>
     </div>
   </section>
 </main>
 
-<nav id="bottomNav" class="nav hidden"><button class="active" data-screen="home">⌂</button><button data-screen="tasks">☑</button><button data-screen="finance">$</button><button data-screen="habits">◎</button><button data-screen="ai">✦</button></nav>
+<nav id="bottomNav" class="nav hidden">
+  <button class="active" data-screen="home">⌂</button>
+  <button data-screen="tasks">☑</button>
+  <button data-screen="finance">$</button>
+  <button data-screen="habits">◎</button>
+  <button data-screen="ai">✦</button>
+</nav>
 
-<div id="modal" class="modal hidden"><section class="card modalCard"><header><h3 id="modalTitle"></h3><button id="modalClose">×</button></header><div id="modalBody"></div></section></div>
+<div id="modal" class="modal hidden">
+  <section class="card modalCard">
+    <header><h3 id="modalTitle"></h3><button id="modalClose">×</button></header>
+    <div id="modalBody"></div>
+  </section>
+</div>
 
 <script src="firebase-config.js"></script>
 <script type="module" src="app.js"></script>
