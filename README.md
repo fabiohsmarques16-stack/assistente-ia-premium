@@ -1,26 +1,21 @@
-# Assistente IA Premium - PWA V2
+# Assistente IA Premium V3.5 Completo
 
-Versão com estrutura para:
-- Banco de dados local via localStorage
-- Login com Firebase Authentication
-- Sincronização em nuvem com Firebase Firestore
-- IA integrada via endpoint seguro
-- Notificações no Android/Chrome
-- Dashboard profissional estilo Notion/ChatGPT/ClickUp
+Implementado:
+- Login Firebase
+- Sincronização Firestore
+- Banco local
+- CRUD completo de tarefas, receitas, despesas e hábitos
+- Editar/excluir todos os itens
+- Dashboard executivo
+- Insights automáticos
+- Modo foco
+- Chat com IA local e estrutura para OpenAI via endpoint
+- Backup JSON
+- Notificações
+- PWA instalável
 
-## Arquivos novos
-- `firebase-config.js`: configure Firebase e endpoint da IA.
-- `app.js`: lógica de login, banco, sincronização, IA e notificações.
-- `service-worker.js`: cache offline.
-
-## Importante sobre IA
-Não coloque chave da OpenAI direto no aplicativo. Use backend seguro:
-- Firebase Functions
-- Cloudflare Worker
-- Servidor Node.js
-
-## Para publicar
-Suba todos os arquivos no mesmo repositório GitHub Pages, substituindo a V1.
-
-## Para usar sem Firebase
-Use o botão "Entrar em modo demonstração". O app salva os dados localmente no celular.
+Como atualizar:
+1. Extraia o ZIP.
+2. Envie todos os arquivos para o GitHub substituindo os antigos.
+3. Commit changes.
+4. Aguarde 1 a 2 minutos e atualize o app.

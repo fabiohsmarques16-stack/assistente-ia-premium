@@ -1,7 +1,7 @@
 {
-  "name": "Assistente IA Premium",
+  "name": "Assistente IA Premium V3.5",
   "short_name": "Assistente IA",
-  "description": "Central pessoal inteligente com login, banco de dados, IA, notificações e nuvem.",
+  "description": "Sistema operacional pessoal com IA, tarefas, hábitos, finanças, dashboard e nuvem.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

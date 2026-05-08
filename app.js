@@ -1,228 +1,66 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import {
-  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import {
-  getFirestore, doc, getDoc, setDoc, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-const $ = (id) => document.getElementById(id);
-const toast = (msg) => { const el = $("toast"); el.textContent = msg; el.classList.add("show"); setTimeout(()=>el.classList.remove("show"), 2800); };
+const $=id=>document.getElementById(id), $$=s=>[...document.querySelectorAll(s)];
+const id=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random());
+const today=()=>new Date().toISOString().slice(0,10);
+const brl=v=>Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const attr=s=>esc(s).replace(/"/g,"&quot;");
+let auth,db,currentUser=null,firebaseReady=false,taskFilter="all",financeFilter="all",timer=null,editId=null;
 
-let firebaseReady = false, auth = null, db = null, currentUser = null;
+function fresh(){return{version:"3.5",updatedAt:Date.now(),tasks:[
+{id:id(),title:"Configurar IA real com Firebase Function",note:"Usar OpenAI API com endpoint seguro",priority:"high",due:today(),done:false,createdAt:Date.now()},
+{id:id(),title:"Revisar dashboard executivo",note:"Validar widgets e insights",priority:"medium",due:"",done:false,createdAt:Date.now()}],
+finances:[{id:id(),type:"income",desc:"Receita exemplo",category:"Geral",value:1200,date:today(),createdAt:Date.now()},{id:id(),type:"expense",desc:"Despesa exemplo",category:"Geral",value:320,date:today(),createdAt:Date.now()}],
+habits:[{id:id(),title:"Planejamento diário",target:"1 vez ao dia",streak:0,completedDates:[],createdAt:Date.now()}],
+chat:[{role:"ai",text:"Olá. Sou seu copiloto pessoal. Posso analisar tarefas, hábitos e finanças para sugerir prioridades.",at:Date.now()}],
+settings:{notifications:false}}}
+let STATE=load();
+function load(){try{return JSON.parse(localStorage.getItem("assistenteIAStateV35"))||fresh()}catch{return fresh()}}
+function saveLocal(){STATE.updatedAt=Date.now();localStorage.setItem("assistenteIAStateV35",JSON.stringify(STATE))}
+function toast(m){$("toast").textContent=m;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),3000)}
+try{const c=window.FIREBASE_CONFIG||{};if(c.apiKey&&c.projectId){const app=initializeApp(c);auth=getAuth(app);db=getFirestore(app);firebaseReady=true}}catch(e){console.warn(e)}
+function ref(){return currentUser&&db?doc(db,"users",currentUser.uid):null}
+async function loadCloud(){if(!firebaseReady||!currentUser)return;try{const snap=await getDoc(ref());if(snap.exists()&&snap.data().state){const cloud=snap.data().state;if((cloud.updatedAt||0)>=(STATE.updatedAt||0))STATE={...fresh(),...cloud};saveLocal()}else await syncCloud(true)}catch(e){toast("Usando dados locais.")}}
+async function syncCloud(silent=false){saveLocal();if(!firebaseReady||!currentUser||currentUser.uid==="demo"){$("syncStatus").textContent="Banco local ativo";if(!silent)toast("Salvo localmente.");return}try{await setDoc(ref(),{state:STATE,email:currentUser.email||"",updatedAtServer:serverTimestamp()},{merge:true});$("syncStatus").textContent="Sincronizado com Firebase";if(!silent)toast("Sincronizado.")}catch(e){$("syncStatus").textContent="Offline/local";if(!silent)toast("Não sincronizou agora.")}}
+function schedule(){saveLocal();render();clearTimeout(timer);timer=setTimeout(()=>syncCloud(true),700)}
+function showApp(){$("loginScreen").classList.add("hidden");$("appScreen").classList.remove("hidden");$("bottomNav").classList.remove("hidden");$("profileBtn").textContent=(currentUser?.email||"FM").slice(0,2).toUpperCase();openScreen(localStorage.getItem("lastScreenV35")||"home");render()}
+function showLogin(){$("loginScreen").classList.remove("hidden");$("appScreen").classList.add("hidden");$("bottomNav").classList.add("hidden")}
+function friendly(c){return({"auth/invalid-email":"e-mail inválido.","auth/invalid-credential":"e-mail ou senha incorretos.","auth/email-already-in-use":"este e-mail já existe.","auth/weak-password":"senha fraca.","auth/operation-not-allowed":"ative E-mail/Senha no Firebase."}[c]||c||"erro")}
+$("demoBtn").onclick=()=>{currentUser={uid:"demo",email:"demo@local"};showApp();toast("Modo demonstração.")}
+$("registerBtn").onclick=async()=>{if(!firebaseReady)return toast("Firebase não configurado.");try{await createUserWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);toast("Conta criada.")}catch(e){toast("Erro: "+friendly(e.code))}}
+$("loginBtn").onclick=async()=>{if(!firebaseReady)return toast("Firebase não configurado.");try{await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value)}catch(e){toast("Erro: "+friendly(e.code))}}
+if(firebaseReady){onAuthStateChanged(auth,async u=>{currentUser=u;if(u){await loadCloud();showApp()}else showLogin()})}else showLogin()
 
-function hasFirebaseConfig() {
-  const c = window.FIREBASE_CONFIG || {};
-  return c.apiKey && c.authDomain && c.projectId && c.appId;
-}
-
-try {
-  if (hasFirebaseConfig()) {
-    const app = initializeApp(window.FIREBASE_CONFIG);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    firebaseReady = true;
-  }
-} catch (e) {
-  console.warn(e);
-}
-
-let STATE = JSON.parse(localStorage.getItem("assistenteIAState") || "null") || {
-  tasks: [{ title: "Publicar PWA no GitHub Pages", done: true }, { title: "Configurar banco de dados", done: false }],
-  habits: [{ title: "Planejamento diário", streak: 3, doneToday: false }],
-  finances: [{ desc: "Receita exemplo", value: 1200 }, { desc: "Despesa exemplo", value: -320 }],
-  chat: []
-};
-
-function saveLocal() {
-  localStorage.setItem("assistenteIAState", JSON.stringify(STATE));
-  render();
-}
-
-async function syncCloud() {
-  if (!firebaseReady || !currentUser) {
-    $("syncStatus").textContent = "Banco local ativo";
-    $("cloudText").textContent = "Modo local ativo. Configure o Firebase para sincronização real em nuvem.";
-    return;
-  }
-  await setDoc(doc(db, "users", currentUser.uid), { state: STATE, updatedAt: serverTimestamp() }, { merge: true });
-  $("syncStatus").textContent = "Sincronizado com Firebase";
-  $("cloudText").textContent = "Sincronização em nuvem ativa com Firestore.";
-}
-
-async function loadCloud() {
-  if (!firebaseReady || !currentUser) return;
-  const snap = await getDoc(doc(db, "users", currentUser.uid));
-  if (snap.exists() && snap.data().state) {
-    STATE = snap.data().state;
-    saveLocal();
-  } else {
-    await syncCloud();
-  }
-}
-
-function showApp() {
-  $("loginScreen").classList.add("hidden");
-  $("appScreen").classList.remove("hidden");
-  $("nav").classList.remove("hidden");
-  render();
-}
-
-function showLogin() {
-  $("loginScreen").classList.remove("hidden");
-  $("appScreen").classList.add("hidden");
-  $("nav").classList.add("hidden");
-}
-
-function openScreen(target) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === target));
-  document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("active", b.dataset.screen === target));
-  localStorage.setItem("lastScreenV2", target);
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-document.querySelectorAll("[data-screen]").forEach(b => b.addEventListener("click", () => openScreen(b.dataset.screen)));
-document.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => openScreen(b.dataset.open)));
-
-$("demoBtn").onclick = () => { currentUser = { uid: "demo", email: "demo@local" }; showApp(); toast("Modo demonstração ativado."); };
-
-$("registerBtn").onclick = async () => {
-  if (!firebaseReady) return toast("Configure o Firebase para criar conta real. Use modo demonstração por enquanto.");
-  try {
-    await createUserWithEmailAndPassword(auth, $("email").value, $("password").value);
-    toast("Conta criada.");
-  } catch (e) { toast("Erro: " + e.message); }
-};
-
-$("loginBtn").onclick = async () => {
-  if (!firebaseReady) return toast("Firebase ainda não configurado. Use modo demonstração.");
-  try {
-    await signInWithEmailAndPassword(auth, $("email").value, $("password").value);
-  } catch (e) { toast("Erro: " + e.message); }
-};
-
-$("logoutBtn").onclick = async () => {
-  if (firebaseReady && auth.currentUser) await signOut(auth);
-  currentUser = null;
-  showLogin();
-};
-
-if (firebaseReady) {
-  onAuthStateChanged(auth, async (user) => {
-    currentUser = user;
-    if (user) { await loadCloud(); showApp(); } else showLogin();
-  });
-} else {
-  showLogin();
-}
-
-$("addTaskBtn").onclick = async () => {
-  const val = $("taskInput").value.trim();
-  if (!val) return;
-  STATE.tasks.unshift({ title: val, done: false });
-  $("taskInput").value = "";
-  saveLocal();
-  await syncCloud();
-};
-
-$("addHabitBtn").onclick = async () => {
-  const val = $("habitInput").value.trim();
-  if (!val) return;
-  STATE.habits.unshift({ title: val, streak: 0, doneToday: false });
-  $("habitInput").value = "";
-  saveLocal();
-  await syncCloud();
-};
-
-$("addIncomeBtn").onclick = () => addFinance(1);
-$("addExpenseBtn").onclick = () => addFinance(-1);
-async function addFinance(sign) {
-  const desc = $("financeDesc").value.trim() || "Lançamento";
-  const value = Math.abs(Number($("financeValue").value || 0)) * sign;
-  if (!value) return toast("Informe um valor.");
-  STATE.finances.unshift({ desc, value });
-  $("financeDesc").value = "";
-  $("financeValue").value = "";
-  saveLocal();
-  await syncCloud();
-}
-
-$("sendAiBtn").onclick = async () => {
-  const text = $("aiInput").value.trim();
-  if (!text) return;
-  $("aiInput").value = "";
-  STATE.chat.push({ role: "user", text });
-  renderChat();
-
-  if (!window.AI_ENDPOINT) {
-    const reply = "Integração visual pronta. Para IA real, configure window.AI_ENDPOINT em firebase-config.js apontando para um backend seguro.";
-    STATE.chat.push({ role: "ai", text: reply });
-    saveLocal();
-    return;
-  }
-
-  try {
-    const res = await fetch(window.AI_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, state: STATE })
-    });
-    const data = await res.json();
-    STATE.chat.push({ role: "ai", text: data.reply || "Sem resposta." });
-  } catch {
-    STATE.chat.push({ role: "ai", text: "Não consegui acessar o endpoint da IA." });
-  }
-  saveLocal();
-};
-
-$("notifyBtn").onclick = async () => {
-  if (!("Notification" in window)) return toast("Este navegador não suporta notificações.");
-  const permission = await Notification.requestPermission();
-  if (permission === "granted") {
-    new Notification("Assistente IA", { body: "Notificações ativadas com sucesso.", icon: "icons/icon-192.png" });
-  } else {
-    toast("Permissão de notificação negada.");
-  }
-};
-
-$("syncBtn").onclick = async () => { await syncCloud(); toast("Sincronização processada."); };
-
-function render() {
-  $("taskCount").textContent = STATE.tasks.length;
-  const doneHabits = STATE.habits.filter(h => h.doneToday).length;
-  $("habitRate").textContent = STATE.habits.length ? Math.round(doneHabits / STATE.habits.length * 100) + "%" : "0%";
-  const total = STATE.finances.reduce((s, f) => s + Number(f.value), 0);
-  $("monthBalance").textContent = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
-  $("financeTotal").textContent = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-  $("taskList").innerHTML = STATE.tasks.map((t,i)=>`
-    <article class="module" data-task="${i}">
-      <div class="mi">${t.done ? "✓" : "○"}</div><div><h4>${t.title}</h4><p>${t.done ? "Concluída" : "Pendente"}</p></div><span class="badge">${t.done ? "OK" : "Aberta"}</span>
-    </article>`).join("");
-  document.querySelectorAll("[data-task]").forEach(el=>el.onclick=async()=>{ const i=+el.dataset.task; STATE.tasks[i].done=!STATE.tasks[i].done; saveLocal(); await syncCloud(); });
-
-  $("habitList").innerHTML = STATE.habits.map((h,i)=>`
-    <article class="module" data-habit="${i}">
-      <div class="mi">${h.doneToday ? "🔥" : "◎"}</div><div><h4>${h.title}</h4><p>Sequência: ${h.streak} dias</p></div><span class="badge">${h.doneToday ? "Hoje OK" : "Hoje?"}</span>
-    </article>`).join("");
-  document.querySelectorAll("[data-habit]").forEach(el=>el.onclick=async()=>{ const i=+el.dataset.habit; STATE.habits[i].doneToday=!STATE.habits[i].doneToday; if(STATE.habits[i].doneToday) STATE.habits[i].streak++; saveLocal(); await syncCloud(); });
-
-  $("financeList").innerHTML = STATE.finances.map(f=>`
-    <article class="module"><div class="mi">${f.value>=0 ? "↗" : "↘"}</div><div><h4>${f.desc}</h4><p>${Number(f.value).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</p></div><span class="badge">${f.value>=0 ? "Receita" : "Despesa"}</span></article>`).join("");
-
-  renderChat();
-}
-
-function renderChat() {
-  $("chatBox").innerHTML = `<div class="msg ai">Olá, Fabio. Posso analisar tarefas, finanças, hábitos e projetos.</div>` +
-    STATE.chat.map(m => `<div class="msg ${m.role === "user" ? "user" : "ai"}">${m.text}</div>`).join("");
-  $("chatBox").scrollTop = $("chatBox").scrollHeight;
-}
-
-const last = localStorage.getItem("lastScreenV2");
-if (last && document.getElementById(last)) openScreen(last);
-render();
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(console.error));
-}
+function openScreen(s){$$(".screen").forEach(x=>x.classList.toggle("active",x.id===s));$$(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.screen===s));localStorage.setItem("lastScreenV35",s);scrollTo({top:0,behavior:"smooth"})}
+$$("[data-screen]").forEach(b=>b.onclick=()=>openScreen(b.dataset.screen));$$("[data-open]").forEach(b=>b.onclick=()=>openScreen(b.dataset.open));$("profileBtn").onclick=()=>openScreen("settings");
+const pLab=p=>({high:"Alta",medium:"Média",low:"Baixa"}[p]||"Média"), pIcon=p=>({high:"🔥",medium:"⚡",low:"○"}[p]||"⚡"), pW=p=>({high:3,medium:2,low:1}[p]||2);
+const income=()=>STATE.finances.filter(f=>f.type==="income").reduce((s,f)=>s+Number(f.value||0),0), expense=()=>STATE.finances.filter(f=>f.type==="expense").reduce((s,f)=>s+Number(f.value||0),0), balance=()=>income()-expense();
+function focusTasks(){return STATE.tasks.filter(t=>!t.done).sort((a,b)=>((pW(b.priority)+(b.due&&b.due<today()?10:0))-(pW(a.priority)+(a.due&&a.due<today()?10:0)))).slice(0,3)}
+function insights(){let a=[],over=STATE.tasks.filter(t=>!t.done&&t.due&&t.due<today()).length,hi=STATE.tasks.filter(t=>!t.done&&t.priority==="high").length,done=STATE.habits.filter(h=>h.completedDates?.includes(today())).length;if(over)a.push(["warn",`Você tem ${over} tarefa(s) atrasada(s).`]);if(hi)a.push(["warn",`Existem ${hi} tarefa(s) de prioridade alta abertas.`]);if(balance()<0)a.push(["warn",`Seu saldo está negativo em ${brl(balance())}.`]);if(STATE.habits.length&&done===STATE.habits.length)a.push(["good","Todos os hábitos de hoje foram concluídos."]);if(!a.length)a.push(["good","Tudo está estável. Mantenha o foco nas 3 prioridades."]);return a}
+function render(){renderDash();renderTasks();renderFinance();renderHabits();renderFocus();renderChat()}
+function renderDash(){let open=STATE.tasks.filter(t=>!t.done).length,done=STATE.habits.filter(h=>h.completedDates?.includes(today())).length,rate=STATE.habits.length?Math.round(done/STATE.habits.length*100):0,focus=focusTasks();$("statTasks").textContent=STATE.tasks.length;$("statTasksSub").textContent=`${open} pendentes`;$("statHabits").textContent=rate+"%";$("statMoney").textContent=brl(balance()).replace(",00","");$("missionTitle").textContent=focus.length?"Missão do dia":"Dia sob controle";$("missionText").textContent=focus.length?`Priorize: ${focus.map(t=>t.title).join(" • ")}.`:"Nenhuma tarefa crítica aberta.";$("insightList").innerHTML=insights().map(i=>`<div class="insight ${i[0]}">${i[1]}</div>`).join("")}
+function empty(t){return `<div class="insight">${t}</div>`}
+function taskList(){return STATE.tasks.filter(t=>taskFilter==="all"||taskFilter==="open"&&!t.done||taskFilter==="done"&&t.done||taskFilter==="high"&&t.priority==="high").sort((a,b)=>Number(a.done)-Number(b.done)||pW(b.priority)-pW(a.priority))}
+function itemHtml(icon,title,desc,badge,actions=""){return `<article class="item"><div class="itemIcon">${icon}</div><main class="itemMain"><h4>${title}</h4><p>${desc}</p></main><span class="badge">${badge}</span><div class="actions">${actions}</div></article>`}
+function renderTasks(){$("taskList").innerHTML=taskList().map(t=>itemHtml(`<button data-toggle-task="${t.id}">${t.done?"✓":pIcon(t.priority)}</button>`,`${t.done?'<span style="text-decoration:line-through;color:var(--muted)">'+esc(t.title)+"</span>":esc(t.title)}`,`${esc(t.note||"Sem observação")} ${t.due?"• Prazo: "+t.due:""}`,pLab(t.priority),`<button class="mini" data-edit-task="${t.id}">✎</button><button class="mini danger" data-delete-task="${t.id}">🗑</button>`)).join("")||empty("Nenhuma tarefa.");bindTasks()}
+function bindTasks(){$$("[data-toggle-task]").forEach(b=>b.onclick=()=>{let t=STATE.tasks.find(x=>x.id===b.dataset.toggleTask);if(t)t.done=!t.done;schedule()});$$("[data-edit-task]").forEach(b=>b.onclick=()=>openTask(STATE.tasks.find(x=>x.id===b.dataset.editTask)));$$("[data-delete-task]").forEach(b=>b.onclick=()=>del("tarefa",()=>{STATE.tasks=STATE.tasks.filter(x=>x.id!==b.dataset.deleteTask);schedule()}))}
+function renderFinance(){$("financeTotal").textContent=brl(balance());$("incomeTotal").textContent="Receitas: "+brl(income());$("expenseTotal").textContent="Despesas: "+brl(expense());let arr=STATE.finances.filter(f=>financeFilter==="all"||f.type===financeFilter).sort((a,b)=>(b.date||"").localeCompare(a.date||""));$("financeList").innerHTML=arr.map(f=>itemHtml(f.type==="income"?"↗":"↘",esc(f.desc),`${esc(f.category||"Geral")} • ${f.date||""}`,brl(f.value),`<button class="mini" data-edit-finance="${f.id}">✎</button><button class="mini danger" data-delete-finance="${f.id}">🗑</button>`)).join("")||empty("Nenhum lançamento.");$$("[data-edit-finance]").forEach(b=>b.onclick=()=>openFinance(STATE.finances.find(x=>x.id===b.dataset.editFinance)));$$("[data-delete-finance]").forEach(b=>b.onclick=()=>del("lançamento",()=>{STATE.finances=STATE.finances.filter(x=>x.id!==b.dataset.deleteFinance);schedule()}))}
+function renderHabits(){$("habitList").innerHTML=STATE.habits.map(h=>{let done=h.completedDates?.includes(today());return itemHtml(`<button data-toggle-habit="${h.id}">${done?"🔥":"◎"}</button>`,esc(h.title),`${esc(h.target||"Meta diária")} • Streak: ${h.streak||0}`,done?"Hoje OK":"Pendente",`<button class="mini" data-edit-habit="${h.id}">✎</button><button class="mini danger" data-delete-habit="${h.id}">🗑</button>`)}).join("")||empty("Nenhum hábito.");$$("[data-toggle-habit]").forEach(b=>b.onclick=()=>{let h=STATE.habits.find(x=>x.id===b.dataset.toggleHabit);h.completedDates||=[];if(h.completedDates.includes(today())){h.completedDates=h.completedDates.filter(d=>d!==today());h.streak=Math.max(0,(h.streak||0)-1)}else{h.completedDates.push(today());h.streak=(h.streak||0)+1}schedule()});$$("[data-edit-habit]").forEach(b=>b.onclick=()=>openHabit(STATE.habits.find(x=>x.id===b.dataset.editHabit)));$$("[data-delete-habit]").forEach(b=>b.onclick=()=>del("hábito",()=>{STATE.habits=STATE.habits.filter(x=>x.id!==b.dataset.deleteHabit);schedule()}))}
+function renderFocus(){let f=focusTasks();$("focusAdvice").textContent=f.length?"Conclua uma por vez. Sem distrações.":"Nada crítico agora.";$("focusList").innerHTML=f.map((t,i)=>itemHtml(i+1,esc(t.title),esc(t.note||"Foco recomendado."),pLab(t.priority),`<button class="mini" data-toggle-task="${t.id}">✓</button>`)).join("")||empty("Nada crítico.");bindTasks()}
+function renderChat(){$("chatBox").innerHTML=STATE.chat.map(m=>`<div class="msg ${m.role==="user"?"user":"ai"}">${esc(m.text)}</div>`).join("");$("chatBox").scrollTop=$("chatBox").scrollHeight}
+$$("[data-task-filter]").forEach(b=>b.onclick=()=>{taskFilter=b.dataset.taskFilter;$$("[data-task-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasks()});$$("[data-finance-filter]").forEach(b=>b.onclick=()=>{financeFilter=b.dataset.financeFilter;$$("[data-finance-filter]").forEach(x=>x.classList.toggle("active",x===b));renderFinance()});$$("[data-modal]").forEach(b=>b.onclick=()=>({task:openTask,finance:openFinance,habit:openHabit}[b.dataset.modal])());
+function openModal(title,html,onSave){$("modalTitle").textContent=title;$("modalBody").innerHTML=html;$("modal").classList.remove("hidden");$("modalSave").onclick=onSave}
+function closeModal(){$("modal").classList.add("hidden");$("modalBody").innerHTML="";editId=null}
+$("modalClose").onclick=closeModal;$("modal").onclick=e=>{if(e.target.id==="modal")closeModal()}
+function openTask(t=null){editId=t?.id||null;openModal(t?"Editar tarefa":"Nova tarefa",`<label>Título</label><input id="mTitle" class="input" value="${attr(t?.title||"")}"><label>Observação</label><textarea id="mNote">${esc(t?.note||"")}</textarea><div class="row"><div><label>Prioridade</label><select id="mPriority"><option value="high">Alta</option><option value="medium">Média</option><option value="low">Baixa</option></select></div><div><label>Prazo</label><input id="mDue" class="input" type="date" value="${t?.due||""}"></div></div><button id="modalSave" class="btn primary ghost">Salvar</button>`,()=>{let title=$("mTitle").value.trim();if(!title)return toast("Digite o título.");let data={title,note:$("mNote").value.trim(),priority:$("mPriority").value,due:$("mDue").value,done:t?.done||false};if(editId)Object.assign(STATE.tasks.find(x=>x.id===editId),data);else STATE.tasks.unshift({id:id(),...data,createdAt:Date.now()});closeModal();schedule()});$("mPriority").value=t?.priority||"medium"}
+function openFinance(f=null){editId=f?.id||null;openModal(f?"Editar lançamento":"Novo lançamento",`<label>Tipo</label><select id="mType"><option value="income">Receita</option><option value="expense">Despesa</option></select><label>Descrição</label><input id="mDesc" class="input" value="${attr(f?.desc||"")}"><div class="row"><div><label>Valor</label><input id="mValue" class="input" type="number" step="0.01" value="${f?.value||""}"></div><div><label>Data</label><input id="mDate" class="input" type="date" value="${f?.date||today()}"></div></div><label>Categoria</label><input id="mCategory" class="input" value="${attr(f?.category||"Geral")}"><button id="modalSave" class="btn primary ghost">Salvar</button>`,()=>{let desc=$("mDesc").value.trim(),value=Math.abs(Number($("mValue").value||0));if(!desc||!value)return toast("Informe descrição e valor.");let data={type:$("mType").value,desc,value,date:$("mDate").value||today(),category:$("mCategory").value.trim()||"Geral"};if(editId)Object.assign(STATE.finances.find(x=>x.id===editId),data);else STATE.finances.unshift({id:id(),...data,createdAt:Date.now()});closeModal();schedule()});$("mType").value=f?.type||"expense"}
+function openHabit(h=null){editId=h?.id||null;openModal(h?"Editar hábito":"Novo hábito",`<label>Hábito</label><input id="mHabit" class="input" value="${attr(h?.title||"")}"><label>Meta</label><input id="mTarget" class="input" value="${attr(h?.target||"1 vez ao dia")}"><button id="modalSave" class="btn primary ghost">Salvar</button>`,()=>{let title=$("mHabit").value.trim();if(!title)return toast("Digite o hábito.");let data={title,target:$("mTarget").value.trim()||"1 vez ao dia"};if(editId)Object.assign(STATE.habits.find(x=>x.id===editId),data);else STATE.habits.unshift({id:id(),...data,streak:0,completedDates:[],createdAt:Date.now()});closeModal();schedule()})}
+function del(label,fn){if(confirm(`Deseja realmente excluir este ${label}?`)){fn();toast(`${label} excluído.`)}}
+$("refreshInsightsBtn").onclick=()=>{renderDash();toast("Insights atualizados.")};$("clearChatBtn").onclick=()=>del("histórico do chat",()=>{STATE.chat=[{role:"ai",text:"Histórico limpo. Como posso ajudar?",at:Date.now()}];schedule()});$$("[data-prompt]").forEach(b=>b.onclick=()=>{$("aiInput").value=b.dataset.prompt;sendAI()});$("sendAiBtn").onclick=sendAI;$("aiInput").addEventListener("keydown",e=>{if(e.key==="Enter")sendAI()});
+async function sendAI(){let text=$("aiInput").value.trim();if(!text)return;$("aiInput").value="";STATE.chat.push({role:"user",text,at:Date.now()});renderChat();if(!window.AI_ENDPOINT){STATE.chat.push({role:"ai",text:localAI(text),at:Date.now()});schedule();return}try{let r=await fetch(window.AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:text,context:{tasks:STATE.tasks,habits:STATE.habits,finances:STATE.finances,balance:balance(),date:today()}})}),d=await r.json();STATE.chat.push({role:"ai",text:d.reply||d.error||"Sem resposta.",at:Date.now()})}catch{STATE.chat.push({role:"ai",text:"Não consegui acessar o endpoint da IA.",at:Date.now()})}schedule()}
+function localAI(text){let ins=insights().map(i=>"- "+i[1]).join("\\n"),f=focusTasks();if(/foco|prioridade|dia/i.test(text))return`IA local ativa.\\n\\n${ins}\\n\\nPrioridades:\\n${f.map((t,i)=>`${i+1}. ${t.title} (${pLab(t.priority)})`).join("\\n")||"Nada crítico."}`;if(/finan|despesa|receita|saldo/i.test(text))return`Resumo financeiro:\\nReceitas: ${brl(income())}\\nDespesas: ${brl(expense())}\\nSaldo: ${brl(balance())}`;return`IA local ativa. Para respostas avançadas estilo ChatGPT, conecte window.AI_ENDPOINT com uma Firebase Function.\\n\\n${ins}`}
+$("notifyBtn").onclick=async()=>{if(!("Notification"in window))return toast("Sem suporte.");let p=await Notification.requestPermission();if(p==="granted"){new Notification("Assistente IA",{body:"Notificações ativadas.",icon:"icons/icon-192.png"});toast("Notificações ativadas.")}else toast("Permissão negada.")};$("syncBtn").onclick=()=>syncCloud(false);$("logoutBtn").onclick=async()=>{if(firebaseReady&&auth.currentUser)await signOut(auth);currentUser=null;showLogin()};$("resetBtn").onclick=()=>del("dados locais",()=>{localStorage.removeItem("assistenteIAStateV35");STATE=fresh();schedule()});$("exportBtn").onclick=()=>{let blob=new Blob([JSON.stringify(STATE,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`assistente-ia-backup-${today()}.json`;a.click();URL.revokeObjectURL(a.href)};$("importInput").onchange=async e=>{let file=e.target.files[0];if(!file)return;try{STATE=JSON.parse(await file.text());schedule();toast("Backup importado.")}catch{toast("Arquivo inválido.")}}
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("service-worker.js").catch(console.error));render();

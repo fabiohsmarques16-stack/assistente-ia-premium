@@ -1,152 +1,102 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#071116" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Assistente IA" />
-  <title>Assistente IA Premium V2</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <style>
-    :root{
-      --bg:#071116;--panel:rgba(17,31,39,.74);--panel2:rgba(10,22,29,.82);
-      --line:rgba(112,235,255,.16);--text:#e8f4f7;--muted:#8ea1a8;
-      --cyan:#35d7f5;--green:#42f59e;--warn:#ffbf6b;--red:#ff6b7a;
-      --shadow:0 24px 80px rgba(0,0,0,.42)
-    }
-    *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-tap-highlight-color:transparent}
-    body{min-height:100vh;min-height:100dvh;color:var(--text);background:radial-gradient(circle at top left,rgba(53,215,245,.14),transparent 34%),radial-gradient(circle at bottom right,rgba(66,245,158,.10),transparent 30%),linear-gradient(145deg,#050b10,#071116 48%,#081a17);overflow-x:hidden}
-    button,input,textarea,select{font:inherit}
-    button{border:0;cursor:pointer;color:inherit;background:transparent}
-    .app{width:min(430px,100%);min-height:100vh;min-height:100dvh;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom));border-left:1px solid rgba(255,255,255,.05);border-right:1px solid rgba(255,255,255,.05)}
-    .screen{display:none;animation:fade .2s ease both}.screen.active{display:block}@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-    .card{background:var(--panel);border:1px solid var(--line);border-radius:26px;box-shadow:var(--shadow);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
-    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.brand{display:flex;gap:12px;align-items:center}
-    .logo,.avatar,.mi{display:grid;place-items:center;background:linear-gradient(145deg,rgba(53,215,245,.22),rgba(66,245,158,.08));border:1px solid rgba(53,215,245,.22);color:var(--cyan)}
-    .logo{width:48px;height:48px;border-radius:17px;font-size:24px}.avatar{width:42px;height:42px;border-radius:50%;font-weight:800;color:#041015;background:linear-gradient(135deg,var(--cyan),var(--green))}
-    h1{font-size:17px;line-height:1.15} .sub{font-size:12px;color:var(--muted);margin-top:3px}
-    .login{min-height:100dvh;display:grid;align-content:center;gap:14px}.login .hero{padding:26px;border-radius:32px}
-    .hero{position:relative;overflow:hidden;padding:22px;margin-bottom:16px}.hero:after{content:"";position:absolute;width:190px;height:190px;right:-70px;top:-80px;border-radius:50%;background:radial-gradient(circle,rgba(53,215,245,.28),transparent 66%)}
-    .hero h2{font-size:30px;line-height:1.04;letter-spacing:-.055em;margin-bottom:10px;position:relative;z-index:1}.hero p{color:var(--muted);font-size:14px;line-height:1.55;position:relative;z-index:1}
-    .field{display:grid;gap:7px;margin-top:12px}.field label{font-size:12px;color:var(--muted);font-weight:700}
-    .input{width:100%;height:48px;border-radius:17px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.045);color:var(--text);padding:0 14px;outline:none}
-    textarea.input{height:100px;padding:14px;resize:none}
-    .btn{height:48px;border-radius:17px;font-weight:800;background:linear-gradient(135deg,var(--cyan),#4fffc1);color:#031216;box-shadow:0 16px 34px rgba(53,215,245,.20)}
-    .btn2{height:48px;border-radius:17px;font-weight:800;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);color:var(--cyan)}
-    .row{display:flex;gap:10px}.row>*{flex:1}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}.stat{padding:14px 12px;border-radius:22px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.075)}.stat b{font-size:19px;display:block}.stat span{font-size:11px;color:var(--muted)}
-    .section{display:flex;align-items:center;justify-content:space-between;margin:18px 2px 10px}.section h3{font-size:16px}.section button{font-size:12px;color:var(--cyan);font-weight:800}
-    .list{display:grid;gap:11px}.module{display:flex;align-items:center;gap:14px;min-height:76px;padding:14px;border-radius:24px;background:rgba(13,25,32,.78);border:1px solid rgba(255,255,255,.075)}
-    .mi{width:50px;height:50px;flex:0 0 50px;border-radius:18px;font-size:23px}.module h4{font-size:15px;margin-bottom:4px}.module p{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.badge{font-size:11px;padding:6px 8px;border-radius:999px;color:#bff6ff;background:rgba(53,215,245,.10);border:1px solid rgba(53,215,245,.13)}
-    .nav{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(398px,calc(100% - 28px));height:70px;border-radius:25px;background:rgba(8,19,25,.88);border:1px solid rgba(112,235,255,.18);backdrop-filter:blur(22px);display:grid;grid-template-columns:repeat(5,1fr);padding:8px;z-index:20;box-shadow:0 18px 60px rgba(0,0,0,.45)}
-    .nav button{display:grid;place-items:center;color:var(--muted);border-radius:18px;font-size:21px}.nav button.active{color:#041015;background:linear-gradient(135deg,var(--cyan),var(--green))}
-    .chip{display:inline-flex;gap:6px;align-items:center;padding:7px 10px;border-radius:999px;background:rgba(53,215,245,.10);border:1px solid rgba(53,215,245,.18);color:#a9f3ff;font-size:12px;margin-bottom:13px}
-    .dot{width:7px;height:7px;border-radius:999px;background:var(--green);box-shadow:0 0 0 6px rgba(66,245,158,.10)}
-    .msg{padding:13px;border-radius:18px;margin:8px 0;line-height:1.45;font-size:13px}.user{background:rgba(53,215,245,.12);margin-left:28px}.ai{background:rgba(255,255,255,.055);margin-right:28px}
-    .status{font-size:11px;color:var(--muted);padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07)}
-    .money{padding:18px;margin-bottom:12px;background:linear-gradient(145deg,rgba(66,245,158,.12),rgba(53,215,245,.06));border:1px solid rgba(66,245,158,.16)}.money strong{font-size:34px;display:block;letter-spacing:-.05em}.bar{height:9px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;width:68%;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--green))}
-    .hidden{display:none!important}.toast{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:50;max-width:390px;width:calc(100% - 28px);padding:12px 14px;border-radius:18px;background:rgba(8,19,25,.94);border:1px solid var(--line);color:#d9faff;font-size:13px;display:none}.toast.show{display:block}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#071116">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Assistente IA Premium V3.5</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="toast" class="toast"></div>
 
 <main id="loginScreen" class="app login">
-  <div class="brand"><div class="logo">✦</div><div><h1>Assistente IA Premium</h1><p class="sub">Login, nuvem, banco de dados e IA</p></div></div>
-  <section class="hero card">
-    <span class="chip"><span class="dot"></span> V2 profissional</span>
-    <h2>Sua central inteligente pessoal.</h2>
-    <p>Entre para sincronizar tarefas, hábitos, finanças, projetos e conversas da IA.</p>
-    <div class="field"><label>E-mail</label><input id="email" class="input" placeholder="seuemail@gmail.com" /></div>
-    <div class="field"><label>Senha</label><input id="password" class="input" type="password" placeholder="mínimo 6 caracteres" /></div>
-    <div class="row" style="margin-top:14px"><button id="loginBtn" class="btn">Entrar</button><button id="registerBtn" class="btn2">Criar conta</button></div>
-    <button id="demoBtn" class="btn2" style="width:100%;margin-top:10px">Entrar em modo demonstração</button>
+  <section class="card login-card">
+    <div class="brand big"><div class="logo">✦</div><div><h1>Assistente IA Premium</h1><p>Central inteligente pessoal V3.5</p></div></div>
+    <span class="chip"><i></i>Sistema operacional pessoal</span>
+    <h2>Organize sua rotina com IA, nuvem e decisões inteligentes.</h2>
+    <p class="lead">Login, tarefas, finanças, hábitos, modo foco, dashboard executivo e chat inteligente em um único aplicativo.</p>
+    <label>E-mail</label><input id="email" class="input" type="email" placeholder="seuemail@gmail.com">
+    <label>Senha</label><input id="password" class="input" type="password" placeholder="mínimo 6 caracteres">
+    <div class="row"><button id="loginBtn" class="btn primary">Entrar</button><button id="registerBtn" class="btn secondary">Criar conta</button></div>
+    <button id="demoBtn" class="btn ghost">Entrar em modo demonstração</button>
+    <small>Com Firebase configurado, seus dados sincronizam em nuvem por usuário.</small>
   </section>
 </main>
 
 <main id="appScreen" class="app hidden">
   <section id="home" class="screen active">
-    <div class="top"><div class="brand"><div class="logo">✦</div><div><h1>Assistente IA</h1><p id="syncStatus" class="sub">Banco local ativo</p></div></div><button id="logoutBtn" class="avatar">FM</button></div>
-    <section class="hero card">
-      <span class="chip"><span class="dot"></span> Dashboard inteligente</span>
-      <h2>Rotina, projetos, dinheiro e IA em um só lugar.</h2>
-      <p>Estrutura pronta para Firebase, Firestore, notificações, sincronização e integração com IA.</p>
-      <div class="row" style="position:relative;z-index:1;margin-top:16px"><button data-open="ai" class="btn">Abrir IA</button><button id="notifyBtn" class="btn2">Notificar</button></div>
+    <header class="topbar"><div class="brand"><div class="logo">✦</div><div><h1>Assistente IA</h1><p id="syncStatus">Carregando...</p></div></div><button id="profileBtn" class="avatar">FM</button></header>
+    <section class="card hero">
+      <span class="chip"><i></i>Centro de comando</span>
+      <h2 id="missionTitle">Missão do dia</h2>
+      <p id="missionText">Carregando análise inteligente...</p>
+      <div class="row"><button class="btn primary" data-open="focus">Modo foco</button><button id="notifyBtn" class="btn secondary">Notificações</button></div>
     </section>
-    <div class="grid3">
-      <div class="stat"><b id="taskCount">0</b><span>Tarefas</span></div>
-      <div class="stat"><b id="habitRate">0%</b><span>Hábitos</span></div>
-      <div class="stat"><b id="monthBalance">R$ 0</b><span>Saldo</span></div>
-    </div>
-    <div class="section"><h3>Central estilo Notion/ClickUp</h3><button data-open="tasks">Nova tarefa</button></div>
-    <div class="list">
-      <article class="module" data-open="ai"><div class="mi">🧠</div><div><h4>IA integrada</h4><p>Via endpoint seguro configurável.</p></div><span class="badge">API</span></article>
-      <article class="module" data-open="tasks"><div class="mi">☑</div><div><h4>Tarefas e projetos</h4><p>Banco local com sincronização em nuvem.</p></div><span class="badge">DB</span></article>
-      <article class="module" data-open="finance"><div class="mi">$</div><div><h4>Financeiro</h4><p>Receitas, despesas e visão mensal.</p></div><span class="badge">DRE</span></article>
-      <article class="module" data-open="habits"><div class="mi">◎</div><div><h4>Hábitos</h4><p>Streaks e análise de consistência.</p></div><span class="badge">Streak</span></article>
-      <article class="module" data-open="cloud"><div class="mi">☁</div><div><h4>Sincronização</h4><p>Firestore quando Firebase for configurado.</p></div><span class="badge">Cloud</span></article>
-    </div>
+    <section class="stats">
+      <article><span>Tarefas</span><b id="statTasks">0</b><small id="statTasksSub">0 pendentes</small></article>
+      <article><span>Hábitos</span><b id="statHabits">0%</b><small>concluídos hoje</small></article>
+      <article><span>Saldo</span><b id="statMoney">R$ 0</b><small>mês atual</small></article>
+    </section>
+    <section class="card panel"><div class="title"><h3>Insights automáticos</h3><button id="refreshInsightsBtn">Atualizar</button></div><div id="insightList"></div></section>
+    <section class="grid">
+      <article class="module" data-open="tasks"><div>☑</div><main><h4>Tarefas</h4><p>CRUD completo, prioridade, prazo e status.</p></main><em>Produtividade</em></article>
+      <article class="module" data-open="finance"><div>$</div><main><h4>Financeiro</h4><p>Receitas, despesas, categorias e análise.</p></main><em>Controle</em></article>
+      <article class="module" data-open="habits"><div>◎</div><main><h4>Hábitos</h4><p>Streak, conclusão diária e consistência.</p></main><em>Rotina</em></article>
+      <article class="module" data-open="ai"><div>🧠</div><main><h4>IA</h4><p>Chat com contexto dos seus dados.</p></main><em>Copiloto</em></article>
+    </section>
   </section>
 
   <section id="tasks" class="screen">
-    <div class="top"><div class="brand"><div class="logo">☑</div><div><h1>Tarefas</h1><p class="sub">Projetos, demandas e prioridades</p></div></div></div>
-    <div class="card" style="padding:14px;margin-bottom:12px">
-      <div class="field" style="margin-top:0"><label>Nova tarefa</label><input id="taskInput" class="input" placeholder="Ex: responder cliente do letreiro" /></div>
-      <button id="addTaskBtn" class="btn" style="width:100%;margin-top:10px">Adicionar tarefa</button>
-    </div>
+    <header class="topbar"><div class="brand"><div class="logo">☑</div><div><h1>Tarefas</h1><p>Organize, edite e exclua</p></div></div><button class="icon" data-modal="task">＋</button></header>
+    <div class="filters"><button class="active" data-task-filter="all">Todas</button><button data-task-filter="open">Abertas</button><button data-task-filter="done">Concluídas</button><button data-task-filter="high">Alta</button></div>
     <div id="taskList" class="list"></div>
   </section>
 
   <section id="finance" class="screen">
-    <div class="top"><div class="brand"><div class="logo">$</div><div><h1>Financeiro</h1><p class="sub">Controle financeiro completo</p></div></div></div>
-    <div class="money card"><span class="sub">Resultado previsto no mês</span><strong id="financeTotal">R$ 0</strong><div class="bar"><i></i></div></div>
-    <div class="card" style="padding:14px;margin-bottom:12px">
-      <div class="row">
-        <input id="financeDesc" class="input" placeholder="Descrição" />
-        <input id="financeValue" class="input" type="number" placeholder="Valor" />
-      </div>
-      <div class="row" style="margin-top:10px"><button id="addIncomeBtn" class="btn">Receita</button><button id="addExpenseBtn" class="btn2">Despesa</button></div>
-    </div>
+    <header class="topbar"><div class="brand"><div class="logo">$</div><div><h1>Financeiro</h1><p>Receitas, despesas e saldo</p></div></div><button class="icon" data-modal="finance">＋</button></header>
+    <section class="card money"><span>Resultado do mês</span><strong id="financeTotal">R$ 0,00</strong><small id="incomeTotal"></small><small id="expenseTotal"></small></section>
+    <div class="filters"><button class="active" data-finance-filter="all">Tudo</button><button data-finance-filter="income">Receitas</button><button data-finance-filter="expense">Despesas</button></div>
     <div id="financeList" class="list"></div>
   </section>
 
   <section id="habits" class="screen">
-    <div class="top"><div class="brand"><div class="logo">◎</div><div><h1>Hábitos</h1><p class="sub">Streaks e análise</p></div></div></div>
-    <div class="card" style="padding:14px;margin-bottom:12px">
-      <input id="habitInput" class="input" placeholder="Novo hábito. Ex: caminhada" />
-      <button id="addHabitBtn" class="btn" style="width:100%;margin-top:10px">Adicionar hábito</button>
-    </div>
+    <header class="topbar"><div class="brand"><div class="logo">◎</div><div><h1>Hábitos</h1><p>Streaks e consistência</p></div></div><button class="icon" data-modal="habit">＋</button></header>
     <div id="habitList" class="list"></div>
   </section>
 
-  <section id="ai" class="screen">
-    <div class="top"><div class="brand"><div class="logo">🧠</div><div><h1>IA Integrada</h1><p class="sub">Endpoint seguro configurável</p></div></div></div>
-    <div id="chatBox" class="card" style="padding:14px;min-height:280px;margin-bottom:12px">
-      <div class="msg ai">Olá, Fabio. Posso analisar tarefas, finanças, hábitos e projetos. A integração real com IA exige um endpoint seguro no backend.</div>
-    </div>
-    <div class="row"><input id="aiInput" class="input" placeholder="Digite para a IA..." /><button id="sendAiBtn" class="btn" style="flex:0 0 56px">➜</button></div>
+  <section id="focus" class="screen">
+    <header class="topbar"><div class="brand"><div class="logo">🎯</div><div><h1>Modo Foco</h1><p>As 3 prioridades reais</p></div></div></header>
+    <section class="card hero"><h2>Foque no essencial.</h2><p id="focusAdvice">A IA local separa as tarefas mais importantes.</p></section>
+    <div id="focusList" class="list"></div>
   </section>
 
-  <section id="cloud" class="screen">
-    <div class="top"><div class="brand"><div class="logo">☁</div><div><h1>Nuvem</h1><p class="sub">Firebase/Firestore</p></div></div></div>
-    <div class="card" style="padding:16px">
-      <h3>Status</h3>
-      <p id="cloudText" class="sub" style="line-height:1.55;margin-top:8px">Modo local ativo. Para nuvem real, configure o Firebase no arquivo firebase-config.js.</p>
-      <button id="syncBtn" class="btn" style="width:100%;margin-top:14px">Sincronizar agora</button>
+  <section id="ai" class="screen">
+    <header class="topbar"><div class="brand"><div class="logo">🧠</div><div><h1>IA Copiloto</h1><p>Contexto com tarefas, hábitos e finanças</p></div></div><button id="clearChatBtn" class="icon">⌫</button></header>
+    <div id="chatBox" class="chat card"></div>
+    <div class="prompts"><button data-prompt="Analise meu dia e diga as 3 prioridades.">Analisar dia</button><button data-prompt="Analise minhas finanças e mostre riscos.">Finanças</button><button data-prompt="Monte um plano de foco para hoje.">Plano foco</button></div>
+    <div class="chatInput"><input id="aiInput" class="input" placeholder="Digite uma mensagem..."><button id="sendAiBtn" class="btn primary">➜</button></div>
+  </section>
+
+  <section id="settings" class="screen">
+    <header class="topbar"><div class="brand"><div class="logo">⚙</div><div><h1>Configurações</h1><p>Conta, nuvem e dados</p></div></div></header>
+    <div class="settings">
+      <button id="syncBtn"><span><b>Sincronizar agora</b><small>Força envio para nuvem</small></span><em>☁</em></button>
+      <button id="exportBtn"><span><b>Exportar backup JSON</b><small>Baixe uma cópia dos dados</small></span><em>⇩</em></button>
+      <label><span><b>Importar backup JSON</b><small>Restaure dados exportados</small></span><em>⇧</em><input id="importInput" type="file" accept="application/json" hidden></label>
+      <button id="resetBtn" class="danger"><span><b>Apagar dados locais</b><small>Limpa este aparelho</small></span><em>🗑</em></button>
+      <button id="logoutBtn"><span><b>Sair da conta</b><small>Encerrar sessão atual</small></span><em>↪</em></button>
     </div>
   </section>
 </main>
 
-<nav id="nav" class="nav hidden">
-  <button class="active" data-screen="home">⌂</button>
-  <button data-screen="tasks">☑</button>
-  <button data-screen="finance">$</button>
-  <button data-screen="habits">◎</button>
-  <button data-screen="ai">✦</button>
-</nav>
+<nav id="bottomNav" class="nav hidden"><button class="active" data-screen="home">⌂</button><button data-screen="tasks">☑</button><button data-screen="finance">$</button><button data-screen="habits">◎</button><button data-screen="ai">✦</button></nav>
+
+<div id="modal" class="modal hidden"><section class="card modalCard"><header><h3 id="modalTitle"></h3><button id="modalClose">×</button></header><div id="modalBody"></div></section></div>
 
 <script src="firebase-config.js"></script>
 <script type="module" src="app.js"></script>
