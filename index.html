@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#071116">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Assistente IA Premium V3.5</title>
+<title>Assistente IA Premium V3.6 Voz</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="style.css">
@@ -16,7 +16,7 @@
 
 <main id="loginScreen" class="app login">
   <section class="card login-card">
-    <div class="brand big"><div class="logo">✦</div><div><h1>Assistente IA Premium</h1><p>Central inteligente pessoal V3.5</p></div></div>
+    <div class="brand big"><div class="logo">✦</div><div><h1>Assistente IA Premium</h1><p>Central inteligente pessoal V3.6 com voz</p></div></div>
     <span class="chip"><i></i>Sistema operacional pessoal</span>
     <h2>Organize sua rotina com IA, nuvem e decisões inteligentes.</h2>
     <p class="lead">Login, tarefas, finanças, hábitos, modo foco, dashboard executivo e chat inteligente em um único aplicativo.</p>
@@ -30,7 +30,7 @@
 
 <main id="appScreen" class="app hidden">
   <section id="home" class="screen active">
-    <header class="topbar"><div class="brand"><div class="logo">✦</div><div><h1>Assistente IA</h1><p id="syncStatus">Carregando...</p></div></div><button id="profileBtn" class="avatar">FM</button></header>
+    <header class="topbar"><div class="brand"><div class="logo">✦</div><div><h1>Assistente IA</h1><p id="syncStatus">Carregando...</p></div></div><button id="profileBtn" class="avatar" data-screen="settings">FM</button></header>
     <section class="card hero">
       <span class="chip"><i></i>Centro de comando</span>
       <h2 id="missionTitle">Missão do dia</h2>
@@ -52,38 +52,38 @@
   </section>
 
   <section id="tasks" class="screen">
-    <header class="topbar"><div class="brand"><div class="logo">☑</div><div><h1>Tarefas</h1><p>Organize, edite e exclua</p></div></div><button class="icon" data-modal="task">＋</button></header>
+    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">☑</div><div><h1>Tarefas</h1><p>Organize, edite e exclua</p></div></div><button class="icon" data-modal="task">＋</button></header>
     <div class="filters"><button class="active" data-task-filter="all">Todas</button><button data-task-filter="open">Abertas</button><button data-task-filter="done">Concluídas</button><button data-task-filter="high">Alta</button></div>
     <div id="taskList" class="list"></div>
   </section>
 
   <section id="finance" class="screen">
-    <header class="topbar"><div class="brand"><div class="logo">$</div><div><h1>Financeiro</h1><p>Receitas, despesas e saldo</p></div></div><button class="icon" data-modal="finance">＋</button></header>
+    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">$</div><div><h1>Financeiro</h1><p>Receitas, despesas e saldo</p></div></div><button class="icon" data-modal="finance">＋</button></header>
     <section class="card money"><span>Resultado do mês</span><strong id="financeTotal">R$ 0,00</strong><small id="incomeTotal"></small><small id="expenseTotal"></small></section>
     <div class="filters"><button class="active" data-finance-filter="all">Tudo</button><button data-finance-filter="income">Receitas</button><button data-finance-filter="expense">Despesas</button></div>
     <div id="financeList" class="list"></div>
   </section>
 
   <section id="habits" class="screen">
-    <header class="topbar"><div class="brand"><div class="logo">◎</div><div><h1>Hábitos</h1><p>Streaks e consistência</p></div></div><button class="icon" data-modal="habit">＋</button></header>
+    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">◎</div><div><h1>Hábitos</h1><p>Streaks e consistência</p></div></div><button class="icon" data-modal="habit">＋</button></header>
     <div id="habitList" class="list"></div>
   </section>
 
   <section id="focus" class="screen">
-    <header class="topbar"><div class="brand"><div class="logo">🎯</div><div><h1>Modo Foco</h1><p>As 3 prioridades reais</p></div></div></header>
+    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">🎯</div><div><h1>Modo Foco</h1><p>As 3 prioridades reais</p></div></div></header>
     <section class="card hero"><h2>Foque no essencial.</h2><p id="focusAdvice">A IA local separa as tarefas mais importantes.</p></section>
     <div id="focusList" class="list"></div>
   </section>
 
   <section id="ai" class="screen">
-    <header class="topbar"><div class="brand"><div class="logo">🧠</div><div><h1>IA Copiloto</h1><p>Contexto com tarefas, hábitos e finanças</p></div></div><button id="clearChatBtn" class="icon">⌫</button></header>
+    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">🧠</div><div><h1>IA Copiloto</h1><p>Digite ou fale comigo</p></div></div><button id="clearChatBtn" class="icon">⌫</button></header>
     <div id="chatBox" class="chat card"></div>
     <div class="prompts"><button data-prompt="Analise meu dia e diga as 3 prioridades.">Analisar dia</button><button data-prompt="Analise minhas finanças e mostre riscos.">Finanças</button><button data-prompt="Monte um plano de foco para hoje.">Plano foco</button></div>
-    <div class="chatInput"><input id="aiInput" class="input" placeholder="Digite uma mensagem..."><button id="sendAiBtn" class="btn primary">➜</button></div>
+    <div class="chatInput voiceInput"><input id="aiInput" class="input" placeholder="Digite ou toque no microfone..."><button id="voiceBtn" class="btn secondary" title="Falar com a IA">🎙</button><button id="sendAiBtn" class="btn primary">➜</button></div>
   </section>
 
   <section id="settings" class="screen">
-    <header class="topbar"><div class="brand"><div class="logo">⚙</div><div><h1>Configurações</h1><p>Conta, nuvem e dados</p></div></div></header>
+    <header class="topbar"><button class="icon" data-home>⌂</button><div class="brand"><div class="logo">⚙</div><div><h1>Configurações</h1><p>Conta, nuvem e dados</p></div></div></header>
     <div class="settings">
       <button id="syncBtn"><span><b>Sincronizar agora</b><small>Força envio para nuvem</small></span><em>☁</em></button>
       <button id="exportBtn"><span><b>Exportar backup JSON</b><small>Baixe uma cópia dos dados</small></span><em>⇩</em></button>
