@@ -20,6 +20,16 @@
     appId: "1:64235509575:web:0abdcb667f38acbead1e62"
   };
 
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAPFCGphpAXmCDMvYf",
+  authDomain: "assistente-pessoal-ia.firebaseapp.com",
+  projectId: "assistente-pessoal-ia",
+  storageBucket: "assistente-pessoal-ia.appspot.com",
+  messagingSenderId: "64235509575",
+  appId: "1:64235509575:web:0abdcb"
+};
+
+
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
 </script>
