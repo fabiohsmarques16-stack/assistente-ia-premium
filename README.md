@@ -1,48 +1,55 @@
-# Assistente IA Premium V3.7
+# Assistente IA V4 Completo
 
-## Melhorias desta versão (V3.7)
+Versão reconstruída a partir da V3.7 enviada. O projeto agora inclui layout mais profissional, ícone IA, PWA, tela inicial, voz, IA local, IA externa opcional, tarefas avançadas, financeiro com metas, hábitos com calendário, notificações, backup JSON, CSV/PDF e regras do Firestore.
 
-### Correções de bugs
-- **Reset diário de hábitos**: hábitos agora são automaticamente desmarcados à meia-noite. O campo `lastCheckedDate` rastreia quando cada hábito foi concluído, garantindo que o streak só cresça quando marcado num novo dia.
-- **Aviso de microfone**: quando o reconhecimento de voz não está disponível, o botão exibe tooltip e toast explicativo ao clicar, em vez de apenas ficar desabilitado sem explicação.
-- **Pasta de ícones**: ícones corretamente em `icons/icon-192.png` e `icons/icon-512.png`.
+## Recursos principais
+- Login por e-mail/senha e Google via Firebase.
+- Modo local/demonstração funcional.
+- IA local por comandos: criar tarefa, despesa, receita e análise do dia.
+- IA real opcional: OpenAI, Anthropic ou endpoint próprio.
+- Comando de voz no Chrome Android em HTTPS/localhost.
+- Tarefas com subtarefas, tags, recorrência, prazo e arrastar para reordenar.
+- Financeiro com despesas/receitas, contas, recorrência, meta de economia, limite de gastos, gráficos, CSV e PDF.
+- Hábitos com frequência, lembrete e calendário de consistência.
+- Notificações reais quando autorizadas pelo navegador.
+- Tema claro/escuro.
+- Histórico para desfazer exclusões.
+- Manifest com atalhos: Nova tarefa, Registrar despesa e IA.
+- Service worker para instalar como PWA.
 
-### Novas funcionalidades
-- **Endpoint da IA configurável na interface**: Configurações > IA externa, sem precisar editar código.
-- **Fechar modal com Escape** e clicando no fundo escuro.
-- **Confirmação para limpar chat**: evita limpeza acidental.
-- **Label de data nos hábitos**: cabeçalho mostra o dia atual.
-- **Resposta local mais informativa**: IA explica todos os comandos disponíveis.
+## Como instalar no celular
+1. Publique a pasta em um endereço HTTPS, GitHub Pages ou Firebase Hosting.
+2. Abra pelo Chrome Android.
+3. Toque nos três pontos do navegador.
+4. Use **Adicionar à tela inicial** ou **Instalar app**.
 
-### Design
-- Tipografia: Syne (títulos) + DM Sans (corpo) via Google Fonts
-- Animações de entrada aprimoradas (modais, chat, telas)
-- Hover states nos cards e módulos
-- Toast com animação de slide
+> Em arquivo local `file://`, o PWA e o microfone podem não funcionar corretamente. Use HTTPS ou localhost.
 
-## Estrutura de arquivos
-```
-/
-├── index.html
-├── app.js
-├── style.css
-├── firebase-config.js
-├── service-worker.js
-├── manifest.json
-└── icons/
-    ├── icon-192.png
-    └── icon-512.png
-```
+## Firebase
+O arquivo `firebase-config.js` já veio do projeto enviado. No console Firebase:
+1. Ative Authentication por e-mail/senha.
+2. Ative Google Login se quiser usar o botão Google.
+3. Ative Firestore.
+4. Copie o conteúdo de `firestore.rules` para as regras do Firestore e publique.
 
-> Os ícones DEVEM estar na pasta `icons/`. Se estiverem na raiz, mova-os.
+## IA direta no app
+Configurações > IA real:
+- Local: não usa API.
+- OpenAI direto: usa chave no navegador.
+- Anthropic direto: usa chave no navegador.
+- Endpoint próprio: URL de backend que receba `{ message, data }` e retorne `{ reply }`.
 
-## Exemplos de comandos
-- "Crie uma tarefa comprar etiquetas amanhã"
-- "Registre despesa de 35 reais com acrílico"
-- "Registre receita de 120 reais venda de pudim"
-- "Analise meu dia"
+Atenção: chave API dentro do navegador fica exposta. Para uso comercial, use backend próprio.
 
-## Notas
-- Reconhecimento de voz: Chrome Android em HTTPS ou localhost.
-- Para IA avançada: configure o Endpoint em Configurações > IA externa.
-- Regras do Firestore devem restringir acesso por uid.
+
+## Atualização V4.1 — itens finais adicionados
+- Detecção e tela de resolução de conflito entre dados locais e nuvem.
+- Badge do app com quantidade de tarefas pendentes quando o navegador suporta `setAppBadge`.
+- Backup criptografado com senha usando WebCrypto AES-GCM.
+- Registro biométrico/WebAuthn quando o aparelho e navegador suportam.
+- Botões de resolução de conflito em Configurações.
+
+### Limites reais do navegador
+- Push em segundo plano completo no Android exige Firebase Cloud Messaging/servidor de envio.
+- OpenAI/Anthropic direto no navegador pode expor chave e sofrer bloqueio CORS; para produção, use backend.
+- Biometria depende de HTTPS, Chrome/Android e suporte WebAuthn do aparelho.
