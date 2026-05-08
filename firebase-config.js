@@ -6,5 +6,4 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: "64235509575",
   appId: "1:64235509575:web:0abdcb667f38acbead1e62"
 };
-
 window.AI_ENDPOINT = "";
