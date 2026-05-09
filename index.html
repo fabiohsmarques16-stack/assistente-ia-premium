@@ -2,274 +2,321 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#060d10">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#07101a" id="themeColorMeta">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Assistente IA Premium V4.0</title>
+<title>Assistente IA Premium V4.1</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="toast" class="toast"></div>
 
-<!-- ══════════════════ LOGIN ══════════════════ -->
+<!-- ── LOGIN ───────────────────────────────────── -->
 <main id="loginScreen" class="app login">
-  <section class="card login-card">
-    <div class="brand big">
-      <div class="logo">✦</div>
-      <div><h1>Assistente IA Premium</h1><p>Central inteligente pessoal V4.0</p></div>
+  <div class="login-bg"></div>
+  <section class="login-card card">
+    <div class="login-logo">
+      <div class="logo-mark">✦</div>
+      <div>
+        <h1 class="login-title">Assistente IA</h1>
+        <p class="login-sub">Premium V4.1</p>
+      </div>
     </div>
-    <span class="chip"><i></i>Sistema operacional pessoal</span>
-    <h2>Organize sua vida com IA.</h2>
-    <p class="lead">Tarefas, finanças, hábitos, modo foco, gráficos, IA com Claude e comandos de voz em um único app.</p>
-    <label>E-mail</label>
-    <input id="email" class="input" type="email" placeholder="seuemail@gmail.com" autocomplete="email">
-    <label>Senha</label>
-    <input id="password" class="input" type="password" placeholder="mínimo 6 caracteres" autocomplete="current-password">
-    <div class="row">
+    <h2 class="login-headline">Sua vida, organizada<br>com inteligência.</h2>
+    <p class="login-lead">Tarefas · Finanças · Hábitos · IA Claude · Voz</p>
+
+    <div class="input-group">
+      <span class="input-icon">✉</span>
+      <input id="email" class="input" type="email" placeholder="E-mail" autocomplete="email">
+    </div>
+    <div class="input-group">
+      <span class="input-icon">🔒</span>
+      <input id="password" class="input" type="password" placeholder="Senha (mín. 6 caracteres)" autocomplete="current-password">
+    </div>
+    <div class="login-actions">
       <button id="loginBtn" class="btn primary">Entrar</button>
-      <button id="registerBtn" class="btn secondary">Criar conta</button>
+      <button id="registerBtn" class="btn outline">Criar conta</button>
     </div>
-    <button id="googleBtn" class="btn ghost google-btn">
-      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+    <button id="googleBtn" class="btn google-btn">
+      <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       Continuar com Google
     </button>
-    <button id="demoBtn" class="btn ghost">Entrar em modo demonstração</button>
-    <small>Com Firebase configurado, dados sincronizam em nuvem por usuário.</small>
+    <button id="demoBtn" class="btn ghost-sm">Modo demonstração →</button>
   </section>
 </main>
 
-<!-- ══════════════════ ONBOARDING ══════════════════ -->
+<!-- ── ONBOARDING ──────────────────────────────── -->
 <main id="onboardingScreen" class="app hidden">
-  <section class="onboarding-wrap">
-    <div class="onboarding-slide active" id="ob0">
-      <div class="ob-icon">✦</div>
-      <h2>Bem-vindo ao Assistente IA</h2>
-      <p>Seu sistema operacional pessoal com IA, voz e sincronização em nuvem.</p>
+  <div class="ob-wrap">
+    <div class="ob-slides">
+      <div class="ob-slide active"><div class="ob-icon">✦</div><h2>Bem-vindo ao<br>Assistente IA</h2><p>Sistema operacional pessoal com IA, voz e nuvem.</p></div>
+      <div class="ob-slide"><div class="ob-icon">🧠</div><h2>IA com Claude</h2><p>Configure sua API key e tenha um assistente com o contexto completo dos seus dados.</p></div>
+      <div class="ob-slide"><div class="ob-icon">🎙</div><h2>Comandos por voz</h2><p>Crie tarefas, registre despesas e receba análises falando naturalmente.</p></div>
+      <div class="ob-slide"><div class="ob-icon">📊</div><h2>Gráficos em tempo real</h2><p>Acompanhe finanças, hábitos e produtividade com insights automáticos.</p></div>
     </div>
-    <div class="onboarding-slide" id="ob1">
-      <div class="ob-icon">🧠</div>
-      <h2>IA com Claude</h2>
-      <p>Configure sua chave da API Anthropic e converse com Claude diretamente, com todo o contexto dos seus dados.</p>
-    </div>
-    <div class="onboarding-slide" id="ob2">
-      <div class="ob-icon">🎙</div>
-      <h2>Comandos por voz</h2>
-      <p>Fale para criar tarefas, registrar despesas e receber análises. O app responde em voz também.</p>
-    </div>
-    <div class="onboarding-slide" id="ob3">
-      <div class="ob-icon">📊</div>
-      <h2>Gráficos e insights</h2>
-      <p>Acompanhe seu progresso financeiro, hábitos e produtividade com gráficos visuais automáticos.</p>
-    </div>
-    <div class="ob-dots">
-      <span class="ob-dot active"></span><span class="ob-dot"></span><span class="ob-dot"></span><span class="ob-dot"></span>
-    </div>
-    <div class="row ob-actions">
-      <button id="obSkip" class="btn secondary">Pular</button>
+    <div class="ob-dots"><span class="ob-dot active"></span><span class="ob-dot"></span><span class="ob-dot"></span><span class="ob-dot"></span></div>
+    <div class="ob-footer">
+      <button id="obSkip" class="btn outline">Pular</button>
       <button id="obNext" class="btn primary">Próximo</button>
     </div>
-  </section>
+  </div>
 </main>
 
-<!-- ══════════════════ APP ══════════════════ -->
+<!-- ── APP ────────────────────────────────────── -->
 <main id="appScreen" class="app hidden">
 
   <!-- HOME -->
   <section id="home" class="screen active">
     <header class="topbar">
-      <div class="brand">
-        <div class="logo">✦</div>
-        <div><h1>Assistente IA</h1><p id="syncStatus">Carregando...</p></div>
+      <div>
+        <p class="greeting" id="greeting">Bom dia</p>
+        <p class="sync-status" id="syncStatus">Carregando...</p>
       </div>
-      <button id="profileBtn" class="avatar" data-screen="settings">FM</button>
+      <div class="topbar-right">
+        <button id="searchToggleBtn" class="icon-btn" aria-label="Buscar">🔍</button>
+        <button id="profileBtn" class="avatar-btn" data-screen="settings">IA</button>
+      </div>
     </header>
-    <section class="card hero">
-      <span class="chip"><i></i>Centro de comando</span>
-      <h2 id="missionTitle">Missão do dia</h2>
-      <p id="missionText">Carregando análise inteligente...</p>
-      <div class="row">
-        <button class="btn primary" data-open="focus">Modo foco</button>
-        <button id="notifyBtn" class="btn secondary">Notificações</button>
+
+    <!-- Search bar (hidden by default) -->
+    <div id="searchBar" class="search-bar hidden">
+      <input id="searchInput" class="input search-input" placeholder="Buscar tarefas, finanças, hábitos..." autocomplete="off">
+      <button id="searchClose" class="icon-btn">✕</button>
+    </div>
+    <div id="searchResults" class="search-results hidden"></div>
+
+    <!-- Quick stats row -->
+    <div class="stats-row">
+      <div class="stat-card" data-open="tasks">
+        <span class="stat-label">Tarefas</span>
+        <b class="stat-val" id="statTasks">0</b>
+        <small id="statTasksSub">abertas</small>
       </div>
+      <div class="stat-card" data-open="habits">
+        <span class="stat-label">Hábitos</span>
+        <b class="stat-val" id="statHabits">0%</b>
+        <small>hoje</small>
+      </div>
+      <div class="stat-card" data-open="finance">
+        <span class="stat-label">Saldo</span>
+        <b class="stat-val" id="statMoney">R$0</b>
+        <small>este mês</small>
+      </div>
+    </div>
+
+    <!-- Mission card -->
+    <section class="mission-card card">
+      <div class="mission-header">
+        <span class="live-badge"><i></i>Missão do dia</span>
+        <button class="btn-icon-sm" data-open="focus">Foco →</button>
+      </div>
+      <p id="missionText">Analisando seus dados...</p>
     </section>
-    <section class="stats">
-      <article><span>Tarefas</span><b id="statTasks">0</b><small id="statTasksSub">0 pendentes</small></article>
-      <article><span>Hábitos</span><b id="statHabits">0%</b><small>concluídos hoje</small></article>
-      <article><span>Saldo</span><b id="statMoney">R$ 0</b><small>mês atual</small></article>
+
+    <!-- Mini sparkline chart -->
+    <section class="sparkline-card card">
+      <div class="sparkline-header">
+        <span class="spark-title">Saldo — últimos 6 meses</span>
+        <div class="spark-tabs">
+          <button class="spark-tab active" data-spark="balance">Saldo</button>
+          <button class="spark-tab" data-spark="income">Receitas</button>
+          <button class="spark-tab" data-spark="expense">Despesas</button>
+        </div>
+      </div>
+      <canvas id="homeChart" height="52"></canvas>
     </section>
-    <!-- Sparkline chart strip -->
-    <section class="card chart-strip">
-      <div class="title"><h3>Últimos 6 meses</h3><span id="chartToggle" class="chip-sm active" data-chart="balance">Saldo</span></div>
-      <canvas id="homeChart" height="70"></canvas>
-    </section>
-    <section class="card panel">
-      <div class="title"><h3>Insights automáticos</h3><button id="refreshInsightsBtn">Atualizar</button></div>
+
+    <!-- Insights -->
+    <section class="insights-card card">
+      <div class="card-header">
+        <span>Insights</span>
+        <button id="refreshInsightsBtn" class="btn-link">↺ Atualizar</button>
+      </div>
       <div id="insightList"></div>
     </section>
-    <section class="grid">
-      <article class="module" data-open="tasks"><div>☑</div><main><h4>Tarefas</h4><p>CRUD, prioridade, prazo e subtarefas.</p></main><em>Produtividade</em></article>
-      <article class="module" data-open="finance"><div>$</div><main><h4>Financeiro</h4><p>Receitas, despesas, metas e gráficos.</p></main><em>Controle</em></article>
-      <article class="module" data-open="habits"><div>◎</div><main><h4>Hábitos</h4><p>Streak, calendário e consistência.</p></main><em>Rotina</em></article>
-      <article class="module" data-open="ai"><div>🧠</div><main><h4>IA Claude</h4><p>Chat avançado com seus dados.</p></main><em>Copiloto</em></article>
-    </section>
+
+    <!-- Quick access grid -->
+    <div class="quick-grid">
+      <button class="quick-btn" data-open="tasks"><span class="qb-icon">☑</span><span>Tarefas</span></button>
+      <button class="quick-btn" data-open="finance"><span class="qb-icon">$</span><span>Finanças</span></button>
+      <button class="quick-btn" data-open="habits"><span class="qb-icon">◎</span><span>Hábitos</span></button>
+      <button class="quick-btn" data-open="ai"><span class="qb-icon">🧠</span><span>IA</span></button>
+    </div>
   </section>
 
   <!-- TASKS -->
   <section id="tasks" class="screen">
     <header class="topbar">
-      <button class="icon" data-home>⌂</button>
-      <div class="brand"><div class="logo">☑</div><div><h1>Tarefas</h1><p>Organize e priorize</p></div></div>
-      <button class="icon" data-modal="task">＋</button>
+      <div class="screen-title"><h2>Tarefas</h2><p id="taskCountLabel">—</p></div>
+      <button class="add-btn" data-modal="task">＋</button>
     </header>
-    <div class="filters">
-      <button class="active" data-task-filter="all">Todas</button>
-      <button data-task-filter="open">Abertas</button>
-      <button data-task-filter="done">Concluídas</button>
-      <button data-task-filter="high">🔴 Alta</button>
-      <button data-task-filter="today">📅 Hoje</button>
+    <div class="pill-filters">
+      <button class="pf active" data-task-filter="all">Todas</button>
+      <button class="pf" data-task-filter="open">Abertas</button>
+      <button class="pf" data-task-filter="high">🔴 Alta</button>
+      <button class="pf" data-task-filter="today">📅 Hoje</button>
+      <button class="pf" data-task-filter="done">✓ Feitas</button>
     </div>
-    <div id="taskList" class="list"></div>
+    <div id="taskList" class="item-list"></div>
   </section>
 
   <!-- FINANCE -->
   <section id="finance" class="screen">
     <header class="topbar">
-      <button class="icon" data-home>⌂</button>
-      <div class="brand"><div class="logo">$</div><div><h1>Financeiro</h1><p>Receitas, despesas e metas</p></div></div>
-      <button class="icon" data-modal="finance">＋</button>
+      <div class="screen-title"><h2>Financeiro</h2><p id="finMonthLabel">—</p></div>
+      <button class="add-btn" data-modal="finance">＋</button>
     </header>
-    <section class="card money">
-      <span>Resultado do mês</span>
-      <strong id="financeTotal">R$ 0,00</strong>
-      <div class="money-row">
-        <span id="incomeTotal" class="money-in"></span>
-        <span id="expenseTotal" class="money-out"></span>
+    <!-- Balance hero -->
+    <div class="finance-hero card">
+      <p class="fin-label">Saldo do mês</p>
+      <p class="fin-total" id="financeTotal">R$ 0,00</p>
+      <div class="fin-row">
+        <span class="fin-in" id="incomeTotal">↑ R$ 0,00</span>
+        <span class="fin-out" id="expenseTotal">↓ R$ 0,00</span>
       </div>
-    </section>
-    <!-- Finance Chart -->
-    <section class="card chart-strip">
-      <div class="title"><h3>Distribuição do mês</h3></div>
-      <canvas id="financeChart" height="80"></canvas>
-    </section>
+      <!-- Mini donut inline -->
+      <div class="mini-donut-wrap">
+        <canvas id="financeChart" width="64" height="64"></canvas>
+        <div id="financeChartLegend" class="donut-legend"></div>
+      </div>
+    </div>
     <!-- Goals -->
     <div id="goalsList"></div>
-    <div class="filters">
-      <button class="active" data-finance-filter="all">Tudo</button>
-      <button data-finance-filter="income">Receitas</button>
-      <button data-finance-filter="expense">Despesas</button>
-      <button data-finance-filter="recurring">🔁 Fixas</button>
+    <div class="pill-filters">
+      <button class="pf active" data-finance-filter="all">Tudo</button>
+      <button class="pf" data-finance-filter="income">Receitas</button>
+      <button class="pf" data-finance-filter="expense">Despesas</button>
+      <button class="pf" data-finance-filter="recurring">🔁 Fixas</button>
     </div>
-    <div id="financeList" class="list"></div>
+    <div id="financeList" class="item-list"></div>
   </section>
 
   <!-- HABITS -->
   <section id="habits" class="screen">
     <header class="topbar">
-      <button class="icon" data-home>⌂</button>
-      <div class="brand"><div class="logo">◎</div><div><h1>Hábitos</h1><p id="habitDateLabel">Hoje</p></div></div>
-      <button class="icon" data-modal="habit">＋</button>
+      <div class="screen-title"><h2>Hábitos</h2><p id="habitDateLabel">Hoje</p></div>
+      <button class="add-btn" data-modal="habit">＋</button>
     </header>
-    <div id="habitList" class="list"></div>
+    <div id="habitProgressBar" class="habit-progress-wrap"></div>
+    <div id="habitList" class="item-list"></div>
   </section>
 
   <!-- FOCUS -->
   <section id="focus" class="screen">
     <header class="topbar">
-      <button class="icon" data-home>⌂</button>
-      <div class="brand"><div class="logo">🎯</div><div><h1>Modo Foco</h1><p>As 3 prioridades reais</p></div></div>
+      <div class="screen-title"><h2>Modo Foco</h2><p>Top 3 prioridades</p></div>
     </header>
-    <section class="card hero"><h2>Foque no essencial.</h2><p id="focusAdvice">Separa automaticamente as tarefas mais urgentes.</p></section>
-    <div id="focusList" class="list"></div>
+    <div class="focus-hero card">
+      <p class="focus-motto">Uma tarefa de cada vez.</p>
+      <p id="focusAdvice" class="focus-sub">Separando o que importa agora...</p>
+    </div>
+    <div id="focusList" class="item-list"></div>
   </section>
 
   <!-- AI -->
-  <section id="ai" class="screen">
+  <section id="ai" class="screen ai-screen">
     <header class="topbar">
-      <button class="icon" data-home>⌂</button>
-      <div class="brand"><div class="logo">🧠</div><div><h1>IA Claude</h1><p id="aiModelLabel">Configure a API key</p></div></div>
-      <button id="clearChatBtn" class="icon" title="Limpar chat">⌫</button>
+      <div class="screen-title"><h2>IA Claude</h2><p id="aiModelLabel">Configure a API key</p></div>
+      <button id="clearChatBtn" class="icon-btn" title="Limpar">⌫</button>
     </header>
-    <div id="chatBox" class="chat card"></div>
-    <div class="prompts">
-      <button data-prompt="Analise meu dia e diga as 3 prioridades.">📊 Analisar dia</button>
-      <button data-prompt="Analise minhas finanças e mostre riscos e oportunidades.">💰 Finanças</button>
-      <button data-prompt="Monte um plano de foco para hoje baseado nas minhas tarefas.">🎯 Plano foco</button>
-      <button data-prompt="Como estou com meus hábitos? O que posso melhorar?">◎ Hábitos</button>
+    <div id="chatBox" class="chat-box card"></div>
+    <div class="prompt-chips">
+      <button class="prompt-chip" data-prompt="Analise meu dia e dê as 3 prioridades agora.">📊 Dia</button>
+      <button class="prompt-chip" data-prompt="Analise minhas finanças: riscos e oportunidades.">💰 Finanças</button>
+      <button class="prompt-chip" data-prompt="Monte plano de foco para hoje com minhas tarefas.">🎯 Foco</button>
+      <button class="prompt-chip" data-prompt="Como estão meus hábitos? O que melhorar?">◎ Hábitos</button>
+      <button class="prompt-chip" data-prompt="Dê dicas para aumentar minha produtividade.">⚡ Dicas</button>
     </div>
-    <div class="chatInput voiceInput">
-      <input id="aiInput" class="input" placeholder="Digite ou toque no microfone...">
-      <button id="voiceBtn" class="btn secondary" title="Falar com a IA">🎙</button>
-      <button id="sendAiBtn" class="btn primary">➜</button>
+    <div class="chat-input-row">
+      <input id="aiInput" class="input chat-input" placeholder="Mensagem...">
+      <button id="voiceBtn" class="icon-btn voice-btn" title="Voz">🎙</button>
+      <button id="sendAiBtn" class="btn primary send-btn">➜</button>
     </div>
   </section>
 
   <!-- SETTINGS -->
   <section id="settings" class="screen">
     <header class="topbar">
-      <button class="icon" data-home>⌂</button>
-      <div class="brand"><div class="logo">⚙</div><div><h1>Configurações</h1><p>Conta, IA e dados</p></div></div>
+      <div class="screen-title"><h2>Configurações</h2><p>Conta, IA e dados</p></div>
     </header>
-    <div class="settings">
-
-      <span class="section-label">IA e Voz</span>
-      <div class="settings-card">
-        <div class="settings-card-header"><b>🧠 API Key Claude (Anthropic)</b><small>Para chat avançado com IA real. Obtenha em console.anthropic.com</small></div>
-        <div class="row">
+    <div class="settings-list">
+      <p class="sgroup">🧠 IA</p>
+      <div class="scard">
+        <p class="scard-title">API Key Claude (Anthropic)</p>
+        <p class="scard-sub">Obtenha em console.anthropic.com</p>
+        <div class="scard-row">
           <input id="apiKeyInput" class="input" type="password" placeholder="sk-ant-...">
-          <button id="saveApiKeyBtn" class="btn primary" style="flex:0 0 auto;padding:0 16px">Salvar</button>
+          <button id="saveApiKeyBtn" class="btn primary scard-btn">Salvar</button>
         </div>
-        <div class="row" style="margin-top:8px">
-          <input id="aiEndpointInput" class="input" type="url" placeholder="Endpoint alternativo (opcional)">
-          <button id="saveEndpointBtn" class="btn secondary" style="flex:0 0 auto;padding:0 16px">Salvar</button>
+      </div>
+      <div class="scard">
+        <p class="scard-title">Endpoint alternativo</p>
+        <p class="scard-sub">Backend próprio (opcional)</p>
+        <div class="scard-row">
+          <input id="aiEndpointInput" class="input" type="url" placeholder="https://...">
+          <button id="saveEndpointBtn" class="btn outline scard-btn">Salvar</button>
         </div>
       </div>
 
-      <span class="section-label">Aparência</span>
-      <button id="themeBtn"><span><b>Tema</b><small id="themeLabel">Escuro</small></span><em id="themeIcon">🌙</em></button>
+      <p class="sgroup">🎨 Aparência</p>
+      <button class="srow" id="themeBtn"><span><b>Tema</b><small id="themeLabel">Escuro</small></span><em id="themeIcon">🌙</em></button>
 
-      <span class="section-label">Notificações</span>
-      <button id="notifPermBtn"><span><b>Ativar notificações push</b><small id="notifStatus">Clique para permitir</small></span><em>🔔</em></button>
+      <p class="sgroup">🔔 Notificações</p>
+      <button class="srow" id="notifPermBtn"><span><b>Notificações push</b><small id="notifStatus">Toque para ativar</small></span><em>🔔</em></button>
 
-      <span class="section-label">Nuvem</span>
-      <button id="syncBtn"><span><b>Sincronizar agora</b><small>Força envio para nuvem</small></span><em>☁</em></button>
+      <p class="sgroup">☁ Nuvem</p>
+      <button class="srow" id="syncBtn"><span><b>Sincronizar agora</b><small>Força envio para Firebase</small></span><em>☁</em></button>
 
-      <span class="section-label">Dados</span>
-      <button id="exportBtn"><span><b>Exportar backup JSON</b><small>Baixe uma cópia dos dados</small></span><em>⇩</em></button>
-      <button id="exportCsvBtn"><span><b>Exportar finanças CSV</b><small>Abre no Excel ou Sheets</small></span><em>📋</em></button>
-      <label><span><b>Importar backup JSON</b><small>Restaure dados exportados</small></span><em>⇧</em><input id="importInput" type="file" accept="application/json" hidden></label>
-      <button id="resetBtn" class="danger"><span><b>Apagar dados locais</b><small>Limpa este aparelho</small></span><em>🗑</em></button>
+      <p class="sgroup">📦 Dados</p>
+      <button class="srow" id="exportBtn"><span><b>Exportar JSON</b><small>Backup completo</small></span><em>⇩</em></button>
+      <button class="srow" id="exportCsvBtn"><span><b>Exportar CSV</b><small>Finanças para Excel/Sheets</small></span><em>📋</em></button>
+      <label class="srow"><span><b>Importar backup</b><small>Restaurar dados</small></span><em>⇧</em><input id="importInput" type="file" accept="application/json" hidden></label>
+      <button class="srow danger" id="resetBtn"><span><b>Apagar tudo</b><small>Remove dados locais</small></span><em>🗑</em></button>
 
-      <span class="section-label">Conta</span>
-      <button id="logoutBtn"><span><b>Sair da conta</b><small>Encerrar sessão atual</small></span><em>↪</em></button>
+      <p class="sgroup">👤 Conta</p>
+      <button class="srow" id="logoutBtn"><span><b>Sair</b><small>Encerrar sessão</small></span><em>↪</em></button>
     </div>
   </section>
 
 </main>
 
 <!-- Bottom Nav -->
-<nav id="bottomNav" class="nav hidden">
-  <button class="active" data-screen="home">⌂</button>
-  <button data-screen="tasks">☑</button>
-  <button data-screen="finance">$</button>
-  <button data-screen="habits">◎</button>
-  <button data-screen="ai">✦</button>
+<nav id="bottomNav" class="bottom-nav hidden">
+  <button class="nav-btn active" data-screen="home">
+    <span class="nav-icon">⌂</span><span class="nav-label">Início</span>
+  </button>
+  <button class="nav-btn" data-screen="tasks">
+    <span class="nav-icon">☑</span><span class="nav-label">Tarefas</span>
+  </button>
+  <button class="nav-btn" data-screen="finance">
+    <span class="nav-icon">$</span><span class="nav-label">Finanças</span>
+  </button>
+  <button class="nav-btn" data-screen="habits">
+    <span class="nav-icon">◎</span><span class="nav-label">Hábitos</span>
+  </button>
+  <button class="nav-btn" data-screen="ai">
+    <span class="nav-icon">✦</span><span class="nav-label">IA</span>
+  </button>
 </nav>
 
 <!-- Modal -->
-<div id="modal" class="modal hidden">
-  <section class="card modalCard">
-    <header><h3 id="modalTitle"></h3><button id="modalClose">×</button></header>
-    <div id="modalBody"></div>
-  </section>
+<div id="modal" class="modal-overlay hidden">
+  <div class="modal-sheet card">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <h3 id="modalTitle"></h3>
+      <button id="modalClose" class="modal-close">✕</button>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+  </div>
 </div>
 
-<!-- Chart.js CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="firebase-config.js"></script>
 <script type="module" src="app.js"></script>
