@@ -1,62 +1,888 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,GoogleAuthProvider,signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore,doc,getDoc,setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-const $=q=>document.querySelector(q), $$=q=>[...document.querySelectorAll(q)], uid=()=>crypto?.randomUUID?.()||Date.now()+Math.random()+'';
-const today=()=>new Date().toISOString().slice(0,10), ym=()=>today().slice(0,7), money=n=>(+n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}), esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const defaultData=()=>({tasks:[{id:uid(),title:'Revisar prioridades do dia',area:'Pessoal',priority:'high',done:false,due:today(),notes:'',tags:['foco'],subtasks:[{t:'Definir 3 ações',d:false}],recurrence:'none',order:1}],finances:[{id:uid(),type:'income',title:'Venda exemplo',area:'Sanja Pudding',value:120,date:today(),account:'Principal',currency:'BRL',recurrence:'none',notes:''},{id:uid(),type:'expense',title:'Insumos exemplo',area:'Sanja Pudding',value:45,date:today(),account:'Principal',currency:'BRL',recurrence:'none',notes:''}],habits:[{id:uid(),title:'Planejar o dia',area:'Pessoal',freq:'daily',reminder:'08:00',streak:0,checked:false,history:{},tags:['rotina']}],chat:[],history:[],settings:{theme:'dark',aiProvider:'local',aiKey:'',savingGoal:500,expenseLimit:2500,lastBackup:'',lastProactive:'',onboarded:false}});
-let state=defaultData(),currentUser=null,demo=false,auth=null,db=null,firebaseReady=false,taskFilter='all';
-function toast(m,d=3500){let e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(window.t);window.t=setTimeout(()=>e.classList.remove('show'),d)}
-function key(){return currentUser&&!demo?`assistente-v4-${currentUser.uid}`:'assistente-v4-local'}
-function normalize(d){state={...defaultData(),...(d||{})};['tasks','finances','habits','chat','history'].forEach(k=>state[k]||=[]);state.settings={...defaultData().settings,...(state.settings||{})};state.tasks=state.tasks.map((t,i)=>({tags:[],subtasks:[],recurrence:'none',order:i,...t}));state.finances=state.finances.map(f=>({account:'Principal',currency:'BRL',recurrence:'none',...f}));state.habits=state.habits.map(h=>({freq:'daily',history:{},tags:[],...h}))}
-function saveLocal(){state.updatedAt=new Date().toISOString();localStorage.setItem(key(),JSON.stringify(state));updateBadge()}function loadLocal(){try{normalize(JSON.parse(localStorage.getItem(key())))}catch{normalize(defaultData())}}
-async function saveCloud(){saveLocal(); if(firebaseReady&&currentUser&&!demo) await setDoc(doc(db,'users',currentUser.uid),{data:state,updatedAt:new Date().toISOString()},{merge:true})}
-async function loadCloud(){loadLocal(); if(firebaseReady&&currentUser&&!demo){let s=await getDoc(doc(db,'users',currentUser.uid)); if(s.exists()&&s.data().data){let remote=s.data().data, local=JSON.parse(localStorage.getItem(key())||'null'); if(local?.updatedAt&&remote?.updatedAt&&local.updatedAt!==remote.updatedAt){state.pendingConflict={local,remote};toast('Conflito detectado entre este aparelho e a nuvem. Vá em Configurações para escolher.');normalize(local)}else normalize(remote)} else await saveCloud()}}
-async function initFirebase(){try{if(!window.FIREBASE_CONFIG?.apiKey)throw 0;const app=initializeApp(window.FIREBASE_CONFIG);auth=getAuth(app);db=getFirestore(app);firebaseReady=true;onAuthStateChanged(auth,async u=>{if(u){currentUser=u;demo=false;await enterApp()}})}catch{firebaseReady=false}}
-async function enterApp(){await loadCloud(); applyTheme(); processRecurring(); maybeOnboard(); $('#loginScreen').classList.add('hidden');$('#appScreen').classList.remove('hidden');$('#bottomNav').classList.remove('hidden');show('home');renderAll();proactive()}
-function maybeOnboard(){if(!state.settings.onboarded)$('#onboarding').classList.remove('hidden')}
-function show(id){$$('.screen').forEach(s=>s.classList.remove('active'));$('#'+id)?.classList.add('active');$$('#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.screen===id));scrollTo({top:0,behavior:'smooth'})}
-function periodFinances(){let p=$('#periodFilter')?.value||'month',now=new Date();return state.finances.filter(f=>{let d=new Date(f.date+'T00:00:00');if(p==='all')return true;if(p==='week'){let w=new Date();w.setDate(now.getDate()-7);return d>=w}return String(f.date).startsWith(ym())})}
-function summary(a=state.finances){let income=a.filter(f=>f.type==='income').reduce((s,f)=>s+(+f.value||0),0),expense=a.filter(f=>f.type==='expense').reduce((s,f)=>s+(+f.value||0),0);return{income,expense,balance:income-expense}}
-function renderAll(){renderHome();renderTasks();renderFinance();renderHabits();renderFocus();renderChat();loadSettings();updateBadge()}
-function renderHome(){let open=state.tasks.filter(t=>!t.done).length, done=state.habits.filter(h=>h.checked).length, hp=state.habits.length?Math.round(done/state.habits.length*100):0, m=summary(periodFinances());$('#syncStatus').textContent=firebaseReady&&currentUser&&!demo?'Sincronizado com Firebase':'Modo local/demonstração';$('#statTasks').textContent=state.tasks.length;$('#statTasksSub').textContent=`${open} pendentes`;$('#statMoney').textContent=money(summary(state.finances.filter(f=>String(f.date).startsWith(ym()))).balance);$('#statHabits').textContent=hp+'%';$('#missionText').textContent=mission();renderInsights();drawSpark()}
-function mission(){let overdue=state.tasks.filter(t=>!t.done&&t.due&&t.due<today()).length, high=state.tasks.filter(t=>!t.done&&t.priority==='high').length, m=summary(state.finances.filter(f=>String(f.date).startsWith(ym())));if(overdue)return`Você tem ${overdue} tarefa(s) vencida(s). Resolva ou reprograme hoje.`;if(high)return`Comece por ${high} tarefa(s) de alta prioridade antes de abrir novas frentes.`;if(state.settings.expenseLimit&&m.expense>state.settings.expenseLimit)return`Atenção: despesas do mês passaram do limite definido.`;return'Painel estável. Registre finanças, conclua hábitos e execute as 3 prioridades.'}
-function renderInsights(){let b=$('#insightList'),m=summary(state.finances.filter(f=>String(f.date).startsWith(ym()))),list=[];if(m.expense>m.income)list.push(['warn',`Despesas maiores que receitas: ${money(m.balance)}.`]);let noExp=daysSinceLast('expense');if(noExp>=3)list.push(['warn',`Você não registra despesas há ${noExp} dias.`]);let due=state.tasks.filter(t=>!t.done&&t.due&&t.due<=today()).length;if(due)list.push(['warn',`${due} tarefa(s) vencendo ou vencida(s).`]);if(!list.length)list.push(['good','Sem alertas críticos agora.']);b.innerHTML=list.map(([c,t])=>`<div class="insight ${c}">${esc(t)}</div>`).join('')}
-function daysSinceLast(type){let arr=state.finances.filter(f=>f.type===type).sort((a,b)=>String(b.date).localeCompare(a.date));if(!arr[0])return 99;return Math.floor((new Date(today())-new Date(arr[0].date))/(864e5))}
-function itemActions(type,id){return`<div class="actions"><button class="mini" data-edit="${type}" data-id="${id}" aria-label="Editar">✎</button><button class="mini danger" data-del="${type}" data-id="${id}" aria-label="Excluir">🗑</button></div>`}
-function renderTasks(){let q=($('#taskSearch')?.value||'').toLowerCase(),arr=[...state.tasks].sort((a,b)=>(a.order||0)-(b.order||0));if(taskFilter==='open')arr=arr.filter(t=>!t.done);if(taskFilter==='done')arr=arr.filter(t=>t.done);if(taskFilter==='high')arr=arr.filter(t=>t.priority==='high');if(q)arr=arr.filter(t=>(t.title+t.area+(t.tags||[]).join(' ')).toLowerCase().includes(q));$('#taskList').innerHTML=arr.length?arr.map(t=>`<div class="item" draggable="true" data-drag-task="${t.id}"><div class="itemIcon">☑</div><div class="itemMain"><label class="checkline"><input type="checkbox" data-toggle-task="${t.id}" ${t.done?'checked':''}> <strong>${esc(t.title)}</strong></label><p>${esc(t.area||'Geral')} • ${t.priority==='high'?'Alta':t.priority==='low'?'Baixa':'Média'} ${t.due?'• '+esc(t.due):''} ${t.recurrence!=='none'?'• recorrente':''}</p>${(t.tags||[]).map(x=>`<span class="tag">#${esc(x)}</span>`).join('')}${(t.subtasks||[]).slice(0,3).map((s,i)=>`<div class="subtask"><input type="checkbox" data-subtask="${t.id}" data-i="${i}" ${s.d?'checked':''}>${esc(s.t)}</div>`).join('')}</div>${itemActions('task',t.id)}</div>`).join(''):'<div class="item"><p>Nenhuma tarefa.</p></div>'}
-function renderFinance(){let q=($('#financeSearch')?.value||'').toLowerCase(),arr=periodFinances().sort((a,b)=>String(b.date).localeCompare(a.date));if(q)arr=arr.filter(f=>(f.title+f.area+f.account).toLowerCase().includes(q));let m=summary(arr),mm=summary(state.finances.filter(f=>String(f.date).startsWith(ym())));$('#financeTotal').textContent=money(mm.balance);$('#incomeTotal').textContent=`Receitas: ${money(mm.income)}`;$('#expenseTotal').textContent=`Despesas: ${money(mm.expense)}`;let goal=+state.settings.savingGoal||0,pct=goal?Math.max(0,Math.min(100,mm.balance/goal*100)):0;$('#goalBar').style.width=pct+'%';$('#goalText').textContent=goal?`Meta economia: ${Math.round(pct)}% de ${money(goal)}. Limite gastos: ${money(state.settings.expenseLimit||0)}`:'';$('#financeList').innerHTML=arr.length?arr.map(f=>`<div class="item"><div class="itemIcon">${f.type==='income'?'+':'−'}</div><div class="itemMain"><h4>${f.type==='income'?'Receita':'Despesa'}: ${esc(f.title)}</h4><p>${esc(f.area||'Geral')} • ${money(f.value)} • ${esc(f.date)} • ${esc(f.account)} ${f.recurrence!=='none'?'• recorrente':''}</p></div>${itemActions('finance',f.id)}</div>`).join(''):'<div class="item"><p>Nenhum lançamento.</p></div>';drawFinance(arr)}
-function renderHabits(){let lab=$('#habitDateLabel');lab.textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'short'});$('#habitList').innerHTML=state.habits.map(h=>`<div class="item"><div class="itemIcon">◎</div><div class="itemMain"><label><input type="checkbox" data-toggle-habit="${h.id}" ${h.checked?'checked':''}> <strong>${esc(h.title)}</strong></label><p>${esc(h.area)} • ${h.freq} • sequência ${h.streak||0} dia(s) ${h.reminder?'• '+h.reminder:''}</p>${(h.tags||[]).map(x=>`<span class="tag">#${esc(x)}</span>`).join('')}</div>${itemActions('habit',h.id)}</div>`).join('')||'<div class="item"><p>Nenhum hábito.</p></div>';renderCalendar()}
-function renderCalendar(){let html='';for(let i=83;i>=0;i--){let d=new Date();d.setDate(d.getDate()-i);let k=d.toISOString().slice(0,10),on=state.habits.some(h=>h.history?.[k]);html+=`<div class="day ${on?'on':''}" title="${k}"></div>`}$('#habitCalendar').innerHTML=html}
-function renderFocus(){let p={high:3,medium:2,low:1},arr=state.tasks.filter(t=>!t.done).sort((a,b)=>(p[b.priority]||2)-(p[a.priority]||2)).slice(0,3);$('#focusAdvice').textContent=arr.length?'Resolva estas tarefas antes de cadastrar novas.':'Nada pendente. Planeje a próxima ação.';$('#focusList').innerHTML=arr.map((t,i)=>`<div class="item"><div class="itemIcon">${i+1}</div><div class="itemMain"><h4>${esc(t.title)}</h4><p>${esc(t.area)} • ${t.priority}</p></div></div>`).join('')||'<div class="item"><p>Nenhuma prioridade.</p></div>'}
-function renderChat(){let b=$('#chatBox');b.innerHTML=state.chat.length?state.chat.map(m=>`<div class="msg ${m.role}">${esc(m.text)}</div>`).join(''):`<div class="msg ai">Olá! Posso criar tarefas, registrar despesas/receitas, analisar seu dia e ouvir comandos por voz.\n\nExemplos:\n• crie uma tarefa comprar etiquetas sexta às 15h\n• registre despesa de 35 reais com acrílico\n• receita de 120 reais venda de pudim\n• analise meu dia</div>`;b.scrollTop=b.scrollHeight}
-function addChat(role,text){state.chat.push({role,text,at:new Date().toISOString()});state.chat=state.chat.slice(-100);saveLocal();renderChat()}
-async function handleAi(text,spoken=false){text=text.trim();if(!text)return;$('#aiInput').value='';addChat('user',text);let r=await command(text);addChat('ai',r);if(spoken)speak(r);renderAll();await saveCloud()}
-async function command(text){let l=text.toLowerCase(),v=extractValue(l);if(/(tarefa|lembrete|atividade)/.test(l)&&/(cri|adicion|coloc|cadast)/.test(l)){let title=clean(text,['crie','criar','adicione','adicionar','coloque','cadastrar','cadastre','uma tarefa','tarefa','lembrete']);state.tasks.unshift({id:uid(),title:title||'Nova tarefa',area:area(l),priority:/urgente|alta/.test(l)?'high':'medium',done:false,due:dateInfer(l),notes:'Criada pela IA.',tags:tags(l),subtasks:[],recurrence:recurrence(l),order:0});return`✅ Tarefa criada: ${title||'Nova tarefa'}`}
-if(/(despesa|gasto|paguei|compra|comprei)/.test(l)){let title=clean(text,['registre','registrar','lançar','lance','despesa','gasto','paguei','compra','comprei',String(v||'')]);state.finances.unshift({id:uid(),type:'expense',title:title||'Despesa',area:area(l),value:v||0,date:dateInfer(l)||today(),account:'Principal',currency:'BRL',recurrence:recurrence(l),notes:'Criada pela IA.'});return`💸 Despesa registrada: ${money(v||0)} — ${title||'Despesa'}`}
-if(/(receita|venda|recebi|entrada)/.test(l)){let title=clean(text,['registre','registrar','lançar','lance','receita','venda','recebi','entrada',String(v||'')]);state.finances.unshift({id:uid(),type:'income',title:title||'Receita',area:area(l),value:v||0,date:dateInfer(l)||today(),account:'Principal',currency:'BRL',recurrence:recurrence(l),notes:'Criada pela IA.'});return`💰 Receita registrada: ${money(v||0)} — ${title||'Receita'}`}
-if(/analise|resumo|prioridade|plano/.test(l))return smart();return await remoteAi(text)}
-function extractValue(t){let m=t.replace(',','.').match(/(?:r\$\s*)?(\d+(?:\.\d{1,2})?)/);return m?+m[1]:null}function clean(s,w){w.forEach(x=>{if(x)s=s.replace(new RegExp(x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'ig'),' ')});return s.replace(/\b(de|do|da|com|para|por|reais|real|r\$|hoje|amanhã)\b/ig,' ').replace(/\s+/g,' ').trim()}function area(t){if(t.includes('pudim'))return'Sanja Pudding';if(t.includes('neon')||t.includes('letreiro')||t.includes('acrílico'))return'Neon Sanja';return'Geral'}function tags(t){let m=[...t.matchAll(/#([\wÀ-ÿ-]+)/g)].map(x=>x[1]);return m}function recurrence(t){if(/todo mês|mensal/.test(t))return'monthly';if(/toda semana|semanal|toda segunda|toda terça|toda quarta|toda quinta|toda sexta/.test(t))return'weekly';if(/todo dia|diári/.test(t))return'daily';return'none'}
-function dateInfer(t){let d=new Date();if(t.includes('amanhã'))d.setDate(d.getDate()+1);else if(t.includes('semana que vem'))d.setDate(d.getDate()+7);else {let m=t.match(/dia\s*(\d{1,2})/);if(m)d.setDate(+m[1]);else{let days=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];let i=days.findIndex(x=>t.includes(x));if(i>=0){let diff=(i-d.getDay()+7)%7||7;d.setDate(d.getDate()+diff)}else return ''}}return d.toISOString().slice(0,10)}
-function smart(){let m=summary(state.finances.filter(f=>String(f.date).startsWith(ym()))),open=state.tasks.filter(t=>!t.done),high=open.filter(t=>t.priority==='high');return`📊 Resumo inteligente:\n• Tarefas abertas: ${open.length}, alta prioridade: ${high.length}.\n• Saldo do mês: ${money(m.balance)}. Receitas ${money(m.income)} / despesas ${money(m.expense)}.\n• Hábitos hoje: ${state.habits.filter(h=>h.checked).length}/${state.habits.length}.\n\nAção recomendada: ${high[0]?`comece por "${high[0].title}".`:'registre as despesas de hoje e execute uma tarefa pequena.'}`}
-async function remoteAi(text){let p=state.settings.aiProvider,k=state.settings.aiKey;if(!k||p==='local')return'No modo local eu executo comandos e análises. Para IA real, configure OpenAI/Anthropic/Endpoint em Configurações.';try{if(p==='endpoint'){let r=await fetch(k,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,data:state})});let j=await r.json();return j.reply||j.message||'Resposta vazia.'}if(p==='openai'){let r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},body:JSON.stringify({model:'gpt-4o-mini',messages:[{role:'system',content:'Você é um assistente pessoal em pt-BR. Use o contexto do app.'},{role:'user',content:JSON.stringify({text,data:{tasks:state.tasks,finances:state.finances,habits:state.habits}})}]})});let j=await r.json();return j.choices?.[0]?.message?.content||j.error?.message||'Sem resposta.'}if(p==='anthropic'){let r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-3-5-haiku-latest',max_tokens:700,messages:[{role:'user',content:`Responda em pt-BR usando este contexto: ${JSON.stringify({text,tasks:state.tasks,finances:state.finances,habits:state.habits})}`} ]})});let j=await r.json();return j.content?.[0]?.text||j.error?.message||'Sem resposta.'}}catch(e){return'Não consegui acessar a IA externa. Verifique chave, CORS e internet.'}}
-function openModal(type,id=null){let o=id?find(type,id):null,b=$('#modalBody');$('#modalTitle').textContent=(id?'Editar ':'Adicionar ')+({task:'tarefa',finance:'lançamento',habit:'hábito'}[type]);if(type==='task')b.innerHTML=`<label>Título</label><input id="mTitle" class="input" value="${esc(o?.title||'')}"><label>Área</label><input id="mArea" class="input" value="${esc(o?.area||'')}"><label>Prioridade</label><select id="mPriority"><option value="low">Baixa</option><option value="medium">Média</option><option value="high">Alta</option></select><label>Prazo</label><input id="mDue" class="input" type="date" value="${esc(o?.due||'')}"><label>Tags separadas por vírgula</label><input id="mTags" class="input" value="${esc((o?.tags||[]).join(','))}"><label>Subtarefas separadas por ;</label><textarea id="mSubtasks">${esc((o?.subtasks||[]).map(s=>s.t).join('; '))}</textarea><label>Recorrência</label><select id="mRecurrence"><option value="none">Não repetir</option><option value="daily">Diária</option><option value="weekly">Semanal</option><option value="monthly">Mensal</option></select><label>Notas</label><textarea id="mNotes">${esc(o?.notes||'')}</textarea>`;if(type==='finance')b.innerHTML=`<label>Tipo</label><select id="mType"><option value="income">Receita</option><option value="expense">Despesa</option></select><label>Descrição</label><input id="mTitle" class="input" value="${esc(o?.title||'')}"><label>Categoria/negócio</label><input id="mArea" class="input" value="${esc(o?.area||'')}"><label>Valor</label><input id="mValue" class="input" type="number" step="0.01" value="${esc(o?.value||'')}"><label>Data</label><input id="mDate" class="input" type="date" value="${esc(o?.date||today())}"><label>Conta</label><input id="mAccount" class="input" value="${esc(o?.account||'Principal')}"><label>Recorrência</label><select id="mRecurrence"><option value="none">Não repetir</option><option value="monthly">Mensal</option><option value="weekly">Semanal</option></select><label>Notas</label><textarea id="mNotes">${esc(o?.notes||'')}</textarea>`;if(type==='habit')b.innerHTML=`<label>Hábito</label><input id="mTitle" class="input" value="${esc(o?.title||'')}"><label>Área</label><input id="mArea" class="input" value="${esc(o?.area||'')}"><label>Frequência</label><select id="mFreq"><option value="daily">Diário</option><option value="weekdays">Dias úteis</option><option value="3xweek">3x por semana</option></select><label>Lembrete</label><input id="mReminder" class="input" type="time" value="${esc(o?.reminder||'')}"><label>Tags</label><input id="mTags" class="input" value="${esc((o?.tags||[]).join(','))}">`;b.innerHTML+=`<div class="modalActions"><button id="modalSave" class="btn primary">Salvar</button><button id="modalCancel" class="btn secondary">Cancelar</button></div>`;['mPriority','mType','mRecurrence','mFreq'].forEach(x=>{if($('#'+x)&&o){let prop=x.replace('m','').toLowerCase();$('#'+x).value=o[prop]||$('#'+x).value}});$('#modalSave').onclick=async()=>{await saveModal(type,id);closeModal()};$('#modalCancel').onclick=closeModal;$('#modal').classList.remove('hidden')}
-function closeModal(){$('#modal').classList.add('hidden')}function find(type,id){return(type==='task'?state.tasks:type==='finance'?state.finances:state.habits).find(x=>x.id===id)}function arr(type){return type==='task'?state.tasks:type==='finance'?state.finances:state.habits}function pushHistory(action,item,type){state.history.unshift({action,item,type,at:new Date().toISOString()});state.history=state.history.slice(0,50)}
-async function saveModal(type,id){let a=arr(type),i=a.findIndex(x=>x.id===id),old=id?find(type,id):{};let o={id:id||uid()};if(type==='task')o={...old,...o,title:$('#mTitle').value||'Sem título',area:$('#mArea').value,priority:$('#mPriority').value,due:$('#mDue').value,tags:$('#mTags').value.split(',').map(x=>x.trim()).filter(Boolean),subtasks:$('#mSubtasks').value.split(';').map(x=>x.trim()).filter(Boolean).map((t,j)=>({t,d:old.subtasks?.[j]?.d||false})),recurrence:$('#mRecurrence').value,notes:$('#mNotes').value,done:old.done||false,order:old.order??state.tasks.length};if(type==='finance')o={...old,...o,type:$('#mType').value,title:$('#mTitle').value||'Sem descrição',area:$('#mArea').value,value:+$('#mValue').value||0,date:$('#mDate').value||today(),account:$('#mAccount').value||'Principal',currency:'BRL',recurrence:$('#mRecurrence').value,notes:$('#mNotes').value};if(type==='habit')o={...old,...o,title:$('#mTitle').value||'Sem título',area:$('#mArea').value,freq:$('#mFreq').value,reminder:$('#mReminder').value,tags:$('#mTags').value.split(',').map(x=>x.trim()).filter(Boolean),history:old.history||{},streak:old.streak||0,checked:old.checked||false};i>=0?a[i]=o:a.unshift(o);await saveCloud();renderAll();scheduleNotifications();toast('Salvo com sucesso.')}
-async function remove(type,id){if(!confirm('Excluir este item?'))return;let a=arr(type),i=a.findIndex(x=>x.id===id);if(i>=0){pushHistory('delete',a[i],type);a.splice(i,1)}await saveCloud();renderAll();toast('Item excluído. Use desfazer em Configurações.')}
-function processRecurring(){let last=localStorage.getItem('recurring-date'),t=today();if(last===t)return;state.tasks.forEach(x=>{if(x.recurrence!=='none'&&x.done){x.done=false;x.due=t}});state.finances.forEach(f=>{if(f.recurrence!=='none'&&f.date<ym()+'-01'){let nf={...f,id:uid(),date:t,notes:'Gerado por recorrência'};state.finances.unshift(nf)}});localStorage.setItem('recurring-date',t);saveLocal()}
-function proactive(){let t=today();if(state.settings.lastProactive===t)return;let msgs=[];if(daysSinceLast('expense')>=3)msgs.push('você não registra despesas há 3 dias.');let due=state.tasks.filter(x=>!x.done&&x.due&&x.due<=t).length;if(due)msgs.push(`${due} tarefa(s) vencendo ou vencida(s).`);if(msgs.length)toast('IA proativa: '+msgs.join(' '),6500);state.settings.lastProactive=t;saveLocal()}
-function drawSpark(){let c=$('#sparkChart');if(!c)return;let ctx=c.getContext('2d'),w=c.width=c.clientWidth*devicePixelRatio,h=c.height=90*devicePixelRatio;ctx.clearRect(0,0,w,h);let vals=[];for(let i=5;i>=0;i--){let d=new Date();d.setMonth(d.getMonth()-i);let m=d.toISOString().slice(0,7);vals.push(summary(state.finances.filter(f=>String(f.date).startsWith(m))).balance)}drawLine(ctx,w,h,vals)}function drawFinance(arr){let c=$('#financeChart');if(!c)return;let ctx=c.getContext('2d'),w=c.width=c.clientWidth*devicePixelRatio,h=c.height=150*devicePixelRatio;ctx.clearRect(0,0,w,h);drawLine(ctx,w,h,arr.slice().reverse().map(f=>summary(arr.filter(x=>x.date<=f.date)).balance))}function drawLine(ctx,w,h,vals){if(!vals.length)return;let max=Math.max(...vals,1),min=Math.min(...vals,0),pad=18*devicePixelRatio;ctx.strokeStyle=getComputedStyle(document.body).getPropertyValue('--cyan');ctx.lineWidth=3*devicePixelRatio;ctx.beginPath();vals.forEach((v,i)=>{let x=pad+i*(w-pad*2)/Math.max(1,vals.length-1),y=h-pad-((v-min)/(max-min||1))*(h-pad*2);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()}
-function exportBackup(){let blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`backup-assistente-ia-${today()}.json`;a.click();state.settings.lastBackup=today();saveLocal();toast('Backup JSON exportado.')}function importBackup(file){let r=new FileReader();r.onload=async()=>{try{normalize(JSON.parse(r.result));await saveCloud();renderAll();toast('Backup importado.')}catch{toast('Backup inválido.')}};r.readAsText(file)}function exportCSV(){let rows=[['tipo','descricao','categoria','valor','data','conta'],...state.finances.map(f=>[f.type,f.title,f.area,f.value,f.date,f.account])];download('financeiro.csv',rows.map(r=>r.map(x=>`"${String(x).replaceAll('"','""')}"`).join(';')).join('\n'),'text/csv')}function exportPDF(){let html=`<h1>Relatório Financeiro</h1><p>${today()}</p><pre>${state.finances.map(f=>`${f.date} ${f.type} ${f.title} ${money(f.value)}`).join('\n')}</pre>`;let w=open('','_blank');w.document.write(html);w.print()}function download(n,t,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=n;a.click()}
-function loadSettings(){$('#aiProvider')&&( $('#aiProvider').value=state.settings.aiProvider, $('#aiKey').value=state.settings.aiKey, $('#savingGoal').value=state.settings.savingGoal, $('#expenseLimit').value=state.settings.expenseLimit);let c=$('#conflictStatus'); if(c)c.textContent=state.pendingConflict?'Conflito pendente: escolha local ou nuvem.':'Sem conflito pendente.'}function applyTheme(){document.body.classList.toggle('light',state.settings.theme==='light')}
-async function enableNotifications(){if(!('Notification'in window)){toast('Notificações não suportadas neste navegador.');return}let p=await Notification.requestPermission();toast(p==='granted'?'Notificações ativadas.':'Permissão de notificações negada.');scheduleNotifications()}function scheduleNotifications(){if(Notification?.permission!=='granted')return;state.tasks.filter(t=>!t.done&&t.due===today()).slice(0,3).forEach(t=>new Notification('Tarefa para hoje',{body:t.title,icon:'icons/icon-192.png'}));if(!state.settings.lastBackup||state.settings.lastBackup<today())new Notification('Backup recomendado',{body:'Exporte um backup JSON em Configurações.',icon:'icons/icon-192.png'})}
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-function updateBadge(){try{let n=state.tasks?.filter(t=>!t.done).length||0;if('setAppBadge'in navigator)n?navigator.setAppBadge(n):navigator.clearAppBadge?.();}catch{}}
-async function resolveConflict(choice){if(!state.pendingConflict)return toast('Sem conflito pendente.');normalize(choice==='cloud'?state.pendingConflict.remote:state.pendingConflict.local);state.pendingConflict=null;await saveCloud();renderAll();toast(choice==='cloud'?'Dados da nuvem mantidos.':'Dados locais mantidos e enviados para a nuvem.');}
-async function biometricCheck(){try{if(!window.PublicKeyCredential)return toast('Biometria/WebAuthn não disponível neste navegador.');let challenge=crypto.getRandomValues(new Uint8Array(32));let cred=await navigator.credentials.create({publicKey:{challenge,rp:{name:'Assistente IA'},user:{id:crypto.getRandomValues(new Uint8Array(16)),name:'usuario-local',displayName:'Usuário Local'},pubKeyCredParams:[{type:'public-key',alg:-7}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},timeout:60000}});state.settings.biometricEnabled=!!cred;await saveCloud();toast('Biometria registrada para este aparelho.');}catch(e){toast('Não foi possível registrar biometria neste aparelho.');}}
-async function encryptText(text,password){let enc=new TextEncoder(),salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));let keyMaterial=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveKey']);let key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:120000,hash:'SHA-256'},keyMaterial,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);let ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(text));return JSON.stringify({v:1,salt:[...salt],iv:[...iv],data:btoa(String.fromCharCode(...new Uint8Array(ct)))})}
-async function exportEncryptedBackup(){let p=prompt('Crie uma senha para criptografar o backup:');if(!p)return;let blob=new Blob([await encryptText(JSON.stringify(state),p)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`backup-criptografado-assistente-ia-${today()}.json`;a.click();toast('Backup criptografado exportado. Guarde a senha.');}
+// ─── Helpers ─────────────────────────────────────────────
+const $ = q => document.querySelector(q);
+const $$ = q => Array.from(document.querySelectorAll(q));
+const uid = () => crypto?.randomUUID?.() || String(Date.now() + Math.random());
+const today = () => new Date().toISOString().slice(0, 10);
+const money = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const monthYM = (offset = 0) => { const d = new Date(); d.setMonth(d.getMonth() + offset); return d.toISOString().slice(0, 7); };
 
-function setupVoice(){let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('#voiceBtn').onclick=()=>toast('Use Chrome Android em HTTPS ou localhost para voz.');return}let rec=new SR();rec.lang='pt-BR';rec.onresult=e=>handleAi(e.results[0][0].transcript,true);rec.onerror=()=>toast('Não consegui ouvir. Verifique o microfone.');$('#voiceBtn').onclick=()=>{toast('Estou ouvindo...');rec.start()}}
-function speak(t){try{speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t.replace(/\n/g,'. '));u.lang='pt-BR';speechSynthesis.speak(u)}catch{}}
-function bind(){document.addEventListener('click',async e=>{let t=e.target.closest('button,[data-open],[data-screen],[data-modal],[data-home],[data-edit],[data-del]');if(!t)return;if(t.dataset.screen)show(t.dataset.screen);if(t.dataset.open)show(t.dataset.open);if(t.dataset.home!==undefined)show('home');if(t.dataset.modal)openModal(t.dataset.modal);if(t.dataset.edit)openModal(t.dataset.edit,t.dataset.id);if(t.dataset.del)remove(t.dataset.del,t.dataset.id)});$('#loginBtn').onclick=async()=>{try{if(!firebaseReady)throw Error('Firebase não configurado. Use modo local.');await signInWithEmailAndPassword(auth,$('#email').value,$('#password').value)}catch(e){toast(e.message)}};$('#registerBtn').onclick=async()=>{try{if(!firebaseReady)throw Error('Firebase não configurado.');await createUserWithEmailAndPassword(auth,$('#email').value,$('#password').value)}catch(e){toast(e.message)}};$('#googleBtn').onclick=async()=>{try{if(!firebaseReady)throw Error('Firebase não configurado.');await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){toast('Login Google falhou: '+e.message)}};$('#demoBtn').onclick=async()=>{demo=true;currentUser=null;await enterApp()};$('#logoutBtn').onclick=async()=>{try{if(auth)await signOut(auth)}catch{} location.reload()};$('#startOnboarding').onclick=()=>{state.settings.onboarded=true;saveLocal();$('#onboarding').classList.add('hidden')};$('#modalClose').onclick=closeModal;$('#modal').onclick=e=>{if(e.target.id==='modal')closeModal()};document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});$('#sendAiBtn').onclick=()=>handleAi($('#aiInput').value);$('#aiInput').addEventListener('keydown',e=>{if(e.key==='Enter')handleAi($('#aiInput').value)});$$('[data-prompt]').forEach(b=>b.onclick=()=>handleAi(b.dataset.prompt));$('#clearChatBtn').onclick=async()=>{if(confirm('Limpar conversa?')){state.chat=[];await saveCloud();renderChat()}};$('#notifyBtn').onclick=enableNotifications;$('#refreshInsightsBtn').onclick=renderAll;$('#exportBtn').onclick=exportBackup;$('#importInput').onchange=e=>e.target.files[0]&&importBackup(e.target.files[0]);$('#exportCsvBtn').onclick=exportCSV;$('#exportPdfBtn').onclick=exportPDF;$('#resetBtn').onclick=()=>{if(confirm('Apagar dados locais?')){localStorage.removeItem(key());location.reload()}};$('#syncBtn').onclick=async()=>{await saveCloud();toast('Sincronizado.')};$('#themeBtn').onclick=async()=>{state.settings.theme=state.settings.theme==='light'?'dark':'light';applyTheme();await saveCloud()};$('#saveAiBtn').onclick=async()=>{state.settings.aiProvider=$('#aiProvider').value;state.settings.aiKey=$('#aiKey').value.trim();await saveCloud();toast('Configuração de IA salva.')};$('#saveGoalsBtn').onclick=async()=>{state.settings.savingGoal=+$('#savingGoal').value||0;state.settings.expenseLimit=+$('#expenseLimit').value||0;await saveCloud();renderAll();toast('Metas salvas.')};$('#biometricBtn')&&($('#biometricBtn').onclick=biometricCheck);$('#exportEncryptedBtn')&&($('#exportEncryptedBtn').onclick=exportEncryptedBackup);$('#useLocalBtn')&&($('#useLocalBtn').onclick=()=>resolveConflict('local'));$('#useCloudBtn')&&($('#useCloudBtn').onclick=()=>resolveConflict('cloud'));$('#undoBtn').onclick=async()=>{let h=state.history.shift();if(!h)return toast('Nada para desfazer.');arr(h.type).unshift(h.item);await saveCloud();renderAll();toast('Exclusão desfeita.')};$('#taskSearch').oninput=renderTasks;$('#financeSearch').oninput=renderFinance;$('#periodFilter').onchange=renderFinance;$$('[data-task-filter]').forEach(b=>b.onclick=()=>{$$('[data-task-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');taskFilter=b.dataset.taskFilter;renderTasks()});$('#shareTaskBtn').onclick=async()=>{let list=state.tasks.filter(t=>!t.done).slice(0,5).map(t=>'• '+t.title).join('\n');if(navigator.share)navigator.share({title:'Minhas tarefas',text:list});else navigator.clipboard.writeText(list).then(()=>toast('Tarefas copiadas.'))};document.addEventListener('change',async e=>{let id=e.target.dataset.toggleTask;if(id){let t=find('task',id);t.done=e.target.checked;await saveCloud();renderAll()}id=e.target.dataset.toggleHabit;if(id){let h=find('habit',id),d=today();h.checked=e.target.checked;if(h.checked){h.history[d]=true;h.streak=(h.streak||0)+1}else{delete h.history[d];h.streak=Math.max(0,(h.streak||0)-1)}await saveCloud();renderAll()}let tid=e.target.dataset.subtask;if(tid){let t=find('task',tid),i=+e.target.dataset.i;t.subtasks[i].d=e.target.checked;await saveCloud();renderAll()}});let drag=null;document.addEventListener('dragstart',e=>{let it=e.target.closest('[data-drag-task]');if(it)drag=it.dataset.dragTask});document.addEventListener('drop',async e=>{let it=e.target.closest('[data-drag-task]');if(drag&&it){let a=state.tasks,from=a.findIndex(x=>x.id===drag),to=a.findIndex(x=>x.id===it.dataset.dragTask),[m]=a.splice(from,1);a.splice(to,0,m);a.forEach((x,i)=>x.order=i);await saveCloud();renderTasks()}drag=null});document.addEventListener('dragover',e=>e.preventDefault());setupVoice()}
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./service-worker.js').catch(()=>{});bind();initFirebase().then(()=>{loadLocal();applyTheme();renderAll()});
+// ─── Default state ────────────────────────────────────────
+const defaultData = () => ({
+  tasks: [
+    { id: uid(), title: 'Revisar pedidos da Neon Sanja', area: 'Neon Sanja', priority: 'high', done: false, due: '', notes: '', tags: ['neon'], subtasks: [] },
+    { id: uid(), title: 'Conferir estoque de pudins', area: 'Sanja Pudding', priority: 'medium', done: false, due: '', notes: '', tags: ['estoque'], subtasks: [] }
+  ],
+  finances: [
+    { id: uid(), type: 'income', title: 'Venda exemplo', area: 'Sanja Pudding', value: 120, date: today(), notes: '', recurring: false },
+    { id: uid(), type: 'expense', title: 'Insumos exemplo', area: 'Sanja Pudding', value: 45, date: today(), notes: '', recurring: false }
+  ],
+  habits: [
+    { id: uid(), title: 'Planejar o dia', area: 'Pessoal', streak: 0, checked: false, lastCheckedDate: '', history: [] },
+    { id: uid(), title: 'Prospectar clientes', area: 'Negócios', streak: 0, checked: false, lastCheckedDate: '', history: [] }
+  ],
+  goals: [],
+  chat: [],
+  settings: {
+    backupReminder: true, lastBackupNotice: '',
+    aiEndpoint: '', apiKey: '',
+    lastHabitReset: '', onboardingDone: false,
+    theme: 'dark', notifPermission: 'default'
+  }
+});
+
+let state = defaultData();
+let currentUser = null;
+let demoMode = false;
+let auth = null, db = null;
+let firebaseReady = false;
+let activeTaskFilter = 'all';
+let activeFinanceFilter = 'all';
+let recognition = null, listening = false, voiceAvailable = false;
+let homeChartInst = null, finChartInst = null;
+
+// ─── Toast ────────────────────────────────────────────────
+function toast(msg, duration = 4200) {
+  const el = $('#toast');
+  el.className = 'toast show'; el.textContent = msg;
+  clearTimeout(window.__tt);
+  window.__tt = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ─── Theme ────────────────────────────────────────────────
+function applyTheme(t) {
+  document.body.classList.toggle('light', t === 'light');
+  const icon = $('#themeIcon'), label = $('#themeLabel');
+  if (icon) icon.textContent = t === 'light' ? '☀️' : '🌙';
+  if (label) label.textContent = t === 'light' ? 'Claro' : 'Escuro';
+}
+function toggleTheme() {
+  state.settings.theme = state.settings.theme === 'light' ? 'dark' : 'light';
+  applyTheme(state.settings.theme);
+  saveCloud();
+}
+
+// ─── Storage ─────────────────────────────────────────────
+const storageKey = () => currentUser && !demoMode ? `assistente-v40-${currentUser.uid}` : 'assistente-v40-demo';
+function normalizeData(data) {
+  const def = defaultData();
+  state = { ...def, ...(data || {}) };
+  state.tasks = (state.tasks || []).map(t => ({ tags: [], subtasks: [], ...t }));
+  state.finances = (state.finances || []).map(f => ({ recurring: false, ...f }));
+  state.habits = (state.habits || []).map(h => ({ lastCheckedDate: '', history: [], ...h }));
+  state.goals ||= [];
+  state.chat ||= [];
+  state.settings = { ...def.settings, ...(state.settings || {}) };
+}
+const saveLocal = () => localStorage.setItem(storageKey(), JSON.stringify(state));
+function loadLocal() { try { normalizeData(JSON.parse(localStorage.getItem(storageKey()))); } catch { normalizeData(null); } }
+async function saveCloud() {
+  saveLocal();
+  if (firebaseReady && currentUser && !demoMode) {
+    try { await setDoc(doc(db, 'users', currentUser.uid), { data: state, updatedAt: new Date().toISOString() }, { merge: true }); } catch {}
+  }
+}
+async function loadCloud() {
+  loadLocal();
+  if (firebaseReady && currentUser && !demoMode) {
+    try {
+      const snap = await getDoc(doc(db, 'users', currentUser.uid));
+      if (snap.exists() && snap.data().data) normalizeData(snap.data().data);
+      else await saveCloud();
+    } catch {}
+  }
+}
+
+// ─── Daily habit reset ────────────────────────────────────
+function maybeDailyHabitReset() {
+  const t = today();
+  if (state.settings.lastHabitReset === t) return false;
+  let reset = false;
+  state.habits = state.habits.map(h => {
+    if (h.checked && h.lastCheckedDate && h.lastCheckedDate !== t) { reset = true; return { ...h, checked: false }; }
+    return h;
+  });
+  state.settings.lastHabitReset = t;
+  // Apply recurring finances
+  applyRecurringFinances();
+  return reset;
+}
+
+function applyRecurringFinances() {
+  const t = today();
+  const ym = t.slice(0, 7);
+  state.finances.filter(f => f.recurring).forEach(f => {
+    const alreadyThisMonth = state.finances.some(x => x.recurringParent === f.id && String(x.date).startsWith(ym));
+    if (!alreadyThisMonth && f.date && !String(f.date).startsWith(ym)) {
+      state.finances.push({ ...f, id: uid(), date: ym + '-' + String(f.date).slice(8), recurringParent: f.id, recurring: false });
+    }
+  });
+}
+
+// ─── Firebase ─────────────────────────────────────────────
+async function initFirebase() {
+  try {
+    if (!window.FIREBASE_CONFIG?.apiKey || window.FIREBASE_CONFIG.apiKey.includes('SUA_')) throw new Error('no config');
+    const app = initializeApp(window.FIREBASE_CONFIG);
+    auth = getAuth(app); db = getFirestore(app); firebaseReady = true;
+    onAuthStateChanged(auth, async user => { if (user) { currentUser = user; demoMode = false; await enterApp(); } });
+  } catch { firebaseReady = false; setText('#syncStatus', 'Modo local ativo'); }
+}
+
+// ─── Auth ─────────────────────────────────────────────────
+function validateLogin() {
+  const email = $('#email')?.value.trim() || '';
+  const pass = $('#password')?.value || '';
+  if (!email.includes('@')) throw new Error('E-mail inválido.');
+  if (pass.length < 6) throw new Error('Senha mínimo 6 caracteres.');
+  return { email, pass };
+}
+async function login() { try { const { email, pass } = validateLogin(); if (!firebaseReady) throw new Error('Firebase não configurado. Use modo demonstração.'); await signInWithEmailAndPassword(auth, email, pass); } catch (e) { toast(firebaseMsg(e)); } }
+async function register() { try { const { email, pass } = validateLogin(); if (!firebaseReady) throw new Error('Firebase não configurado.'); await createUserWithEmailAndPassword(auth, email, pass); } catch (e) { toast(firebaseMsg(e)); } }
+async function googleLogin() {
+  if (!firebaseReady) { toast('Firebase não configurado.'); return; }
+  try { const provider = new GoogleAuthProvider(); await signInWithPopup(auth, provider); }
+  catch (e) { toast(firebaseMsg(e)); }
+}
+function firebaseMsg(e) {
+  const c = e?.code || '';
+  if (c.includes('email-already-in-use')) return 'E-mail já cadastrado. Use Entrar.';
+  if (c.includes('wrong-password') || c.includes('invalid-credential')) return 'E-mail ou senha incorretos.';
+  if (c.includes('user-not-found')) return 'Conta não encontrada. Use Criar conta.';
+  if (c.includes('popup-closed')) return 'Login com Google cancelado.';
+  return e?.message || 'Erro inesperado.';
+}
+
+// ─── Onboarding ───────────────────────────────────────────
+let obSlide = 0;
+function showOnboarding() {
+  $('#loginScreen')?.classList.add('hidden');
+  $('#onboardingScreen')?.classList.remove('hidden');
+  goSlide(0);
+}
+function goSlide(i) {
+  obSlide = i;
+  $$('.onboarding-slide').forEach((s, idx) => s.classList.toggle('active', idx === i));
+  $$('.ob-dot').forEach((d, idx) => d.classList.toggle('active', idx === i));
+  const btn = $('#obNext');
+  if (btn) btn.textContent = i === 3 ? 'Começar' : 'Próximo';
+}
+function obNext() {
+  if (obSlide < 3) goSlide(obSlide + 1);
+  else finishOnboarding();
+}
+function finishOnboarding() {
+  state.settings.onboardingDone = true;
+  saveLocal();
+  $('#onboardingScreen')?.classList.add('hidden');
+  $('#appScreen')?.classList.remove('hidden');
+  $('#bottomNav')?.classList.remove('hidden');
+  showScreen('home'); renderAll();
+}
+
+// ─── Enter/exit app ───────────────────────────────────────
+async function enterApp() {
+  await loadCloud();
+  const wasReset = maybeDailyHabitReset();
+  if (wasReset) { await saveCloud(); toast('Hábitos do dia anterior resetados. Bom dia! 🌅'); }
+  applyTheme(state.settings.theme || 'dark');
+  updateSettingsInputs();
+
+  // Show onboarding for new users
+  if (!state.settings.onboardingDone) { showOnboarding(); return; }
+
+  $('#loginScreen')?.classList.add('hidden');
+  $('#appScreen')?.classList.remove('hidden');
+  $('#bottomNav')?.classList.remove('hidden');
+  showScreen('home'); renderAll();
+  maybeBackupNotice();
+  scheduleProactiveInsight();
+}
+function exitApp() {
+  currentUser = null; demoMode = false;
+  $('#loginScreen')?.classList.remove('hidden');
+  ['#appScreen','#bottomNav','#onboardingScreen'].forEach(s => $(s)?.classList.add('hidden'));
+}
+
+// ─── Navigation ───────────────────────────────────────────
+const setText = (q, v) => { const el = $(q); if (el) el.textContent = v; };
+function showScreen(id) {
+  $$('.screen').forEach(s => s.classList.remove('active'));
+  $('#' + id)?.classList.add('active');
+  $$('#bottomNav button').forEach(b => b.classList.toggle('active', b.dataset.screen === id));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (id === 'home') setTimeout(renderCharts, 50);
+  if (id === 'finance') setTimeout(renderFinanceChart, 50);
+}
+
+// ─── Finance helpers ──────────────────────────────────────
+const monthFinances = (ym = monthYM()) => state.finances.filter(f => String(f.date || '').startsWith(ym));
+function financeSummary(arr) {
+  const income = arr.filter(f => f.type === 'income').reduce((s, f) => s + Number(f.value || 0), 0);
+  const expense = arr.filter(f => f.type === 'expense').reduce((s, f) => s + Number(f.value || 0), 0);
+  return { income, expense, balance: income - expense };
+}
+
+// ─── RENDER ALL ───────────────────────────────────────────
+function renderAll() { renderHome(); renderTasks(activeTaskFilter); renderFinance(activeFinanceFilter); renderHabits(); renderFocus(); renderChat(); }
+
+function renderHome() {
+  const open = state.tasks.filter(t => !t.done).length;
+  const doneH = state.habits.filter(h => h.checked).length;
+  const pct = state.habits.length ? Math.round(doneH / state.habits.length * 100) : 0;
+  const m = financeSummary(monthFinances());
+  setText('#syncStatus', firebaseReady && currentUser && !demoMode ? '☁ Sincronizado' : '💾 Modo local');
+  setText('#statTasks', state.tasks.length);
+  setText('#statTasksSub', `${open} pendente${open !== 1 ? 's' : ''}`);
+  setText('#statHabits', `${pct}%`);
+  setText('#statMoney', money(m.balance));
+  setText('#missionText', buildMission());
+  renderInsights();
+
+  // Avatar initials from user email
+  const av = $('#profileBtn');
+  if (av && currentUser?.email) av.textContent = currentUser.email.slice(0, 2).toUpperCase();
+  else if (av) av.textContent = 'IA';
+}
+
+function buildMission() {
+  const high = state.tasks.filter(t => !t.done && t.priority === 'high').length;
+  const balance = financeSummary(monthFinances()).balance;
+  const daysNoFinance = daysSinceLastFinance();
+  if (high) return `Você tem ${high} tarefa${high > 1 ? 's' : ''} de alta prioridade. Resolva pelo menos uma antes de abrir novas frentes.`;
+  if (daysNoFinance > 2) return `Você não registra finanças há ${daysNoFinance} dias. Mantenha o controle do seu mês.`;
+  if (balance < 0) return `Mês negativo em ${money(Math.abs(balance))}. Revise suas despesas e busque novas receitas.`;
+  return 'Painel estável. Escolha uma prioridade, registre os gastos do dia e mantenha os hábitos.';
+}
+
+function daysSinceLastFinance() {
+  if (!state.finances.length) return 999;
+  const last = state.finances.map(f => f.date || '').filter(Boolean).sort().reverse()[0];
+  if (!last) return 999;
+  return Math.floor((Date.now() - new Date(last).getTime()) / 86400000);
+}
+
+function renderInsights() {
+  const box = $('#insightList'); if (!box) return;
+  const m = financeSummary(monthFinances());
+  const open = state.tasks.filter(t => !t.done).length;
+  const high = state.tasks.filter(t => !t.done && t.priority === 'high').length;
+  const list = [];
+  if (high > 0) list.push({ c: 'warn', t: `🔴 ${high} tarefa${high > 1 ? 's' : ''} de alta prioridade em aberto.` });
+  if (m.expense > m.income && m.expense > 0) list.push({ c: 'warn', t: `⚠️ Despesas maiores que receitas: ${money(m.balance)} negativo.` });
+  if (daysSinceLastFinance() > 2) list.push({ c: 'warn', t: `📅 Você não lança finanças há ${daysSinceLastFinance()} dias.` });
+  if (state.habits.length && state.habits.every(h => h.checked)) list.push({ c: 'good', t: '🎉 Todos os hábitos do dia concluídos!' });
+  if (open === 0 && state.tasks.length > 0) list.push({ c: 'good', t: '✅ Todas as tarefas estão concluídas. Ótimo trabalho!' });
+  if (!list.length) list.push({ c: 'good', t: '✓ Sem alertas críticos. Continue registrando tarefas e finanças.' });
+  box.innerHTML = list.map(i => `<div class="insight ${i.c}">${esc(i.t)}</div>`).join('');
+}
+
+// ─── CHARTS ──────────────────────────────────────────────
+function renderCharts() {
+  const canvas = $('#homeChart'); if (!canvas || !window.Chart) return;
+  const months = [-5, -4, -3, -2, -1, 0].map(i => monthYM(i));
+  const labels = months.map(ym => { const [y, m] = ym.split('-'); return new Date(+y, +m - 1).toLocaleDateString('pt-BR', { month: 'short' }); });
+  const balances = months.map(ym => financeSummary(monthFinances(ym)).balance);
+  const incomes = months.map(ym => financeSummary(monthFinances(ym)).income);
+  const expenses = months.map(ym => financeSummary(monthFinances(ym)).expense);
+  if (homeChartInst) homeChartInst.destroy();
+  homeChartInst = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Saldo', data: balances, borderColor: '#2dd4f5', backgroundColor: 'rgba(45,212,245,.08)', tension: .4, fill: true, pointRadius: 3 },
+        { label: 'Receitas', data: incomes, borderColor: '#3af098', backgroundColor: 'rgba(58,240,152,.05)', tension: .4, fill: false, pointRadius: 3, hidden: true },
+        { label: 'Despesas', data: expenses, borderColor: '#ff5f72', backgroundColor: 'rgba(255,95,114,.05)', tension: .4, fill: false, pointRadius: 3, hidden: true }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#6e8f9a', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#6e8f9a', font: { size: 10 }, callback: v => money(v).replace('R$', '') } }
+      }
+    }
+  });
+}
+
+function renderFinanceChart() {
+  const canvas = $('#financeChart'); if (!canvas || !window.Chart) return;
+  const arr = monthFinances();
+  // Group expenses by area
+  const byArea = {};
+  arr.filter(f => f.type === 'expense').forEach(f => { byArea[f.area || 'Outros'] = (byArea[f.area || 'Outros'] || 0) + Number(f.value || 0); });
+  const labels = Object.keys(byArea);
+  const data = Object.values(byArea);
+  if (!labels.length) { canvas.parentElement.style.display = 'none'; return; }
+  canvas.parentElement.style.display = '';
+  if (finChartInst) finChartInst.destroy();
+  finChartInst = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: ['#2dd4f5','#3af098','#ff5f72','#ffb347','#f0c060','#7eeeff'], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, cutout: '68%',
+      plugins: { legend: { position: 'right', labels: { color: '#6e8f9a', font: { size: 11 }, boxWidth: 10 } } }
+    }
+  });
+}
+
+// ─── TASKS ────────────────────────────────────────────────
+const priorityName = p => ({ high: 'Alta', medium: 'Média', low: 'Baixa' }[p] || 'Média');
+const priorityClass = p => ({ high: 'prio-high', medium: 'prio-med', low: 'prio-low' }[p] || '');
+const itemActions = (type, id) => `<div class="actions"><button class="mini" data-edit="${type}" data-id="${id}" title="Editar">✎</button><button class="mini danger" data-del="${type}" data-id="${id}" title="Excluir">🗑</button></div>`;
+
+function renderTasks(filter = 'all') {
+  const list = $('#taskList'); if (!list) return;
+  let arr = [...state.tasks];
+  if (filter === 'open') arr = arr.filter(t => !t.done);
+  if (filter === 'done') arr = arr.filter(t => t.done);
+  if (filter === 'high') arr = arr.filter(t => t.priority === 'high' && !t.done);
+  if (filter === 'today') arr = arr.filter(t => t.due === today() && !t.done);
+
+  list.innerHTML = arr.length ? arr.map(t => {
+    const subDone = (t.subtasks || []).filter(s => s.done).length;
+    const subTotal = (t.subtasks || []).length;
+    const subInfo = subTotal ? ` • ${subDone}/${subTotal} subtarefas` : '';
+    const tagsHtml = (t.tags || []).filter(Boolean).map(tag => `<span class="tag">#${esc(tag)}</span>`).join('');
+    return `
+      <div class="item${t.done ? ' item-done' : ''}">
+        <div class="itemIcon">☑</div>
+        <div class="itemMain">
+          <label class="checkline"><input type="checkbox" data-toggle-task="${t.id}" ${t.done ? 'checked' : ''}> <strong>${esc(t.title)}</strong></label>
+          <p>${esc(t.area || 'Sem área')}${t.due ? ' • 📅 ' + esc(t.due) : ''}${subInfo}</p>
+          ${tagsHtml ? `<div class="tags-wrap">${tagsHtml}</div>` : ''}
+        </div>
+        <span class="badge ${priorityClass(t.priority)}">${priorityName(t.priority)}</span>
+        ${itemActions('task', t.id)}
+      </div>
+      ${subTotal ? `<div class="item-subtasks">${(t.subtasks || []).map(s => `
+        <div class="subtask-item"><input type="checkbox" data-toggle-subtask="${t.id}" data-sub-id="${s.id}" ${s.done ? 'checked' : ''}><label>${esc(s.title)}</label></div>`).join('')}</div>` : ''}
+    `;
+  }).join('') : '<div class="item"><p>Nenhuma tarefa neste filtro.</p></div>';
+}
+
+// ─── FINANCE ──────────────────────────────────────────────
+function renderFinance(filter = 'all') {
+  const list = $('#financeList'); if (!list) return;
+  const m = financeSummary(monthFinances());
+  setText('#financeTotal', money(m.balance));
+  setText('#incomeTotal', `↑ ${money(m.income)}`);
+  setText('#expenseTotal', `↓ ${money(m.expense)}`);
+
+  // Goals
+  renderGoals();
+
+  let arr = [...state.finances].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  if (filter === 'income') arr = arr.filter(f => f.type === 'income');
+  if (filter === 'expense') arr = arr.filter(f => f.type === 'expense');
+  if (filter === 'recurring') arr = arr.filter(f => f.recurring);
+
+  list.innerHTML = arr.length ? arr.map(f => `
+    <div class="item">
+      <div class="itemIcon" style="${f.type === 'income' ? 'color:var(--green);background:rgba(58,240,152,.08);border-color:rgba(58,240,152,.12)' : 'color:var(--red);background:rgba(255,95,114,.08);border-color:rgba(255,95,114,.12)'}">${f.type === 'income' ? '＋' : '−'}</div>
+      <div class="itemMain">
+        <h4>${f.type === 'income' ? 'Receita' : 'Despesa'}: ${esc(f.title)}${f.recurring ? ' 🔁' : ''}</h4>
+        <p>${esc(f.area || 'Sem área')} • ${money(f.value)} • ${esc(f.date || '')}</p>
+      </div>
+      ${itemActions('finance', f.id)}
+    </div>`).join('') : '<div class="item"><p>Nenhum lançamento.</p></div>';
+}
+
+function renderGoals() {
+  const box = $('#goalsList'); if (!box) return;
+  if (!state.goals.length) { box.innerHTML = ''; return; }
+  box.innerHTML = state.goals.map(g => {
+    const pct = Math.min(100, Math.round((Number(g.current || 0) / Number(g.target || 1)) * 100));
+    return `<div class="goal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h5>🎯 ${esc(g.title)}</h5>
+        <button class="mini danger" data-del="goal" data-id="${g.id}" title="Remover">🗑</button>
+      </div>
+      <small>${money(g.current || 0)} de ${money(g.target)} — ${pct}%</small>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ─── HABITS ───────────────────────────────────────────────
+function renderHabits() {
+  const list = $('#habitList'); if (!list) return;
+  const label = $('#habitDateLabel');
+  if (label) label.textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' });
+
+  list.innerHTML = state.habits.length ? state.habits.map(h => {
+    const hist = buildHabitCalendar(h);
+    return `
+      <div class="item" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div class="itemIcon" style="${h.checked ? 'background:rgba(58,240,152,.15);border-color:rgba(58,240,152,.3);color:var(--green)' : ''}">◎</div>
+          <div class="itemMain">
+            <label class="checkline"><input type="checkbox" data-toggle-habit="${h.id}" ${h.checked ? 'checked' : ''}> <strong>${esc(h.title)}</strong></label>
+            <p>${esc(h.area || '')} • 🔥 ${Number(h.streak || 0)} dia${h.streak !== 1 ? 's' : ''}</p>
+          </div>
+          ${itemActions('habit', h.id)}
+        </div>
+        <div class="habit-calendar">${hist}</div>
+      </div>`;
+  }).join('') : '<div class="item"><p>Nenhum hábito. Toque em + para criar.</p></div>';
+}
+
+function buildHabitCalendar(h) {
+  const days = 21;
+  const hist = new Set(h.history || []);
+  let html = '';
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const done = hist.has(key);
+    html += `<div class="cal-day ${done ? 'done' : ''}" title="${key}"></div>`;
+  }
+  return html;
+}
+
+// ─── FOCUS ────────────────────────────────────────────────
+function renderFocus() {
+  const list = $('#focusList'); if (!list) return;
+  const prio = { high: 3, medium: 2, low: 1 };
+  const arr = state.tasks.filter(t => !t.done).sort((a, b) => (prio[b.priority] || 2) - (prio[a.priority] || 2)).slice(0, 3);
+  setText('#focusAdvice', arr.length ? 'Resolva estas antes de abrir novas tarefas.' : 'Nenhuma tarefa aberta. Excelente! 🎉');
+  list.innerHTML = arr.length ? arr.map((t, i) => `
+    <div class="item">
+      <div class="itemIcon">${i + 1}</div>
+      <div class="itemMain"><h4>${esc(t.title)}</h4><p>${esc(t.area || '')} • ${priorityName(t.priority)}${t.due ? ' • 📅 ' + esc(t.due) : ''}</p></div>
+      <span class="badge ${priorityClass(t.priority)}">${priorityName(t.priority)}</span>
+    </div>`).join('') : '<div class="item"><p>Nada pendente! 🎉</p></div>';
+}
+
+// ─── CHAT / AI ────────────────────────────────────────────
+function addChat(role, text) {
+  state.chat.push({ role, text, at: new Date().toISOString() });
+  state.chat = state.chat.slice(-100);
+  saveLocal(); renderChat();
+}
+
+function renderChat() {
+  const box = $('#chatBox'); if (!box) return;
+  const apiKey = state.settings?.apiKey || '';
+  setText('#aiModelLabel', apiKey ? 'Claude Sonnet — ativo' : 'Configure a API key em Configurações');
+  box.innerHTML = state.chat.length
+    ? state.chat.map(m => `<div class="msg ${m.role === 'user' ? 'user' : 'ai'}">${esc(m.text)}</div>`).join('')
+    : `<div class="msg ai">Olá! 👋 Sou seu assistente IA.\n\n${apiKey ? 'Minha API key está configurada. Você pode me fazer perguntas abertas!' : 'Configure sua API key da Anthropic em Configurações para usar o Claude real.'}\n\nComandos rápidos:\n• "crie uma tarefa X amanhã"\n• "despesa de 35 reais com Y"\n• "receita de 120 reais venda Z"\n• "analise meu dia"</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+async function handleAiMessage(text, spoken = false) {
+  const clean = text.trim(); if (!clean) return;
+  const input = $('#aiInput'); if (input) input.value = '';
+  addChat('user', clean);
+
+  // Show typing indicator
+  const box = $('#chatBox');
+  const typing = document.createElement('div');
+  typing.className = 'msg ai typing'; typing.textContent = '...'; box?.appendChild(typing);
+  box.scrollTop = box.scrollHeight;
+
+  const result = await runAI(clean);
+  typing.remove();
+  addChat('ai', result);
+  if (spoken) speak(result);
+  renderAll();
+}
+
+async function runAI(text) {
+  const lower = text.toLowerCase();
+  const value = extractValue(lower);
+
+  // Local commands first (fast)
+  if (/\b(tarefa|lembrete|atividade)\b/.test(lower) && /\b(cri|adicion|coloc|cadast|inclu)\b/.test(lower)) {
+    const title = cleanupTitle(text, ['criar','crie','adicione','adicionar','coloque','cadastrar','cadastre','uma tarefa','tarefa','lembrete']);
+    state.tasks.unshift({ id: uid(), title: title || 'Nova tarefa', area: inferArea(lower), priority: lower.includes('urgente')||lower.includes('alta') ? 'high' : 'medium', done: false, due: inferDate(lower), notes: 'Criada por IA.', tags: [], subtasks: [] });
+    await saveCloud(); return `✅ Tarefa criada: "${title || 'Nova tarefa'}"`;
+  }
+  if (/\b(despesa|gasto|paguei|compra|comprei)\b/.test(lower)) {
+    const title = cleanupTitle(text, ['registrar','registre','lançar','lance','adicionar','adicione','despesa','gasto','paguei','compra','comprei',String(value||'')]);
+    state.finances.unshift({ id: uid(), type: 'expense', title: title || 'Despesa', area: inferArea(lower), value: value ?? 0, date: today(), notes: 'Criada por IA.', recurring: false });
+    await saveCloud(); return `💸 Despesa registrada: ${money(value ?? 0)} — "${title || 'Despesa'}"`;
+  }
+  if (/\b(receita|venda|recebi|entrada|faturamento)\b/.test(lower)) {
+    const title = cleanupTitle(text, ['registrar','registre','lançar','lance','adicionar','adicione','receita','venda','recebi','entrada',String(value||'')]);
+    state.finances.unshift({ id: uid(), type: 'income', title: title || 'Receita', area: inferArea(lower), value: value ?? 0, date: today(), notes: 'Criada por IA.', recurring: false });
+    await saveCloud(); return `💰 Receita registrada: ${money(value ?? 0)} — "${title || 'Receita'}"`;
+  }
+  if (/\b(analise|analisar|resumo|prioridade|dia|finanças|financeiro|hábito)\b/.test(lower) && !state.settings?.apiKey) return smartAnswer();
+
+  // Claude API (real AI)
+  const apiKey = state.settings?.apiKey || '';
+  if (apiKey) return callClaude(text, apiKey);
+
+  // Fallback endpoint
+  const endpoint = state.settings?.aiEndpoint || window.AI_ENDPOINT || '';
+  if (endpoint) return callEndpoint(text, endpoint);
+
+  return smartAnswer();
+}
+
+function buildContext() {
+  const m = financeSummary(monthFinances());
+  const open = state.tasks.filter(t => !t.done);
+  const high = open.filter(t => t.priority === 'high');
+  const habits = state.habits;
+  return `Contexto do usuário (hoje: ${today()}):
+- Tarefas abertas: ${open.length} (${high.length} alta prioridade): ${high.slice(0,3).map(t=>t.title).join(', ')}
+- Finanças do mês: receitas ${money(m.income)}, despesas ${money(m.expense)}, saldo ${money(m.balance)}
+- Hábitos: ${habits.filter(h=>h.checked).length}/${habits.length} concluídos hoje
+- Último lançamento financeiro: ${daysSinceLastFinance()} dias atrás`;
+}
+
+async function callClaude(text, apiKey) {
+  try {
+    const context = buildContext();
+    const messages = [
+      ...state.chat.slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })),
+      { role: 'user', content: text }
+    ];
+    // Remove last user message since it's already in chat
+    messages.pop();
+    messages.push({ role: 'user', content: text });
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `Você é um assistente pessoal inteligente integrado ao app do usuário. Responda sempre em português brasileiro. Seja direto, prático e útil. ${context}`,
+        messages: state.chat.slice(-8).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })).concat([{ role: 'user', content: text }])
+      })
+    });
+    const data = await res.json();
+    if (data.error) return `Erro da API: ${data.error.message}`;
+    return data.content?.[0]?.text || 'Sem resposta.';
+  } catch (e) {
+    return `Erro ao chamar Claude: ${e.message}. Verifique a API key em Configurações.`;
+  }
+}
+
+async function callEndpoint(text, endpoint) {
+  try {
+    const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, context: buildContext(), data: state }) });
+    const data = await r.json();
+    return data.reply || 'Backend respondeu sem texto.';
+  } catch { return 'Não foi possível acessar o backend. Verifique o endpoint em Configurações.'; }
+}
+
+function smartAnswer() {
+  const m = financeSummary(monthFinances());
+  const open = state.tasks.filter(t => !t.done);
+  const high = open.filter(t => t.priority === 'high');
+  const doneH = state.habits.filter(h => h.checked).length;
+  return `📊 Resumo inteligente:\n• ${open.length} tarefa${open.length !== 1 ? 's' : ''} aberta${open.length !== 1 ? 's' : ''}, ${high.length} de alta prioridade${high.length ? ': ' + high.slice(0,2).map(t=>t.title).join(', ') : ''}.\n• Saldo do mês: ${money(m.balance)} (↑${money(m.income)} / ↓${money(m.expense)}).\n• Hábitos hoje: ${doneH}/${state.habits.length} concluídos.\n\n💡 ${high.length ? 'Prioridade: resolva primeiro uma tarefa urgente.' : daysSinceLastFinance() > 1 ? 'Registre os gastos do dia para manter o controle.' : 'Tudo em dia! Mantenha a consistência.'}`;
+}
+
+// ─── NLP helpers ──────────────────────────────────────────
+function extractValue(t) { const m = t.replace(',', '.').match(/(?:r\$\s*)?(\d+(?:\.\d{1,2})?)\s*(?:reais|real)?/); return m ? Number(m[1]) : null; }
+function cleanupTitle(text, words) {
+  let s = text;
+  words.forEach(w => { if (w) s = s.replace(new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig'), ' '); });
+  return s.replace(/\b(de|do|da|com|para|por|reais|real|r\$|\d+)\b/ig, ' ').replace(/\s+/g, ' ').trim();
+}
+function inferArea(t) {
+  if (t.includes('pudim') || t.includes('pudding') || t.includes('sanja pudding')) return 'Sanja Pudding';
+  if (t.includes('neon') || t.includes('letreiro') || t.includes('acrílico')) return 'Neon Sanja';
+  return 'Geral';
+}
+function inferDate(t) {
+  const d = new Date();
+  const lower = t.toLowerCase();
+  if (lower.includes('amanhã')) { d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); }
+  if (lower.includes('semana que vem') || lower.includes('próxima semana')) { d.setDate(d.getDate() + 7); return d.toISOString().slice(0, 10); }
+  if (lower.includes('segunda')) { return nextWeekday(1); }
+  if (lower.includes('terça')) { return nextWeekday(2); }
+  if (lower.includes('quarta')) { return nextWeekday(3); }
+  if (lower.includes('quinta')) { return nextWeekday(4); }
+  if (lower.includes('sexta')) { return nextWeekday(5); }
+  if (lower.includes('final do mês') || lower.includes('fim do mês')) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10); }
+  const dayMatch = lower.match(/dia\s+(\d{1,2})/);
+  if (dayMatch) { const day = parseInt(dayMatch[1]); d.setDate(day); return d.toISOString().slice(0, 10); }
+  return '';
+}
+function nextWeekday(wd) {
+  const d = new Date(); const diff = (wd + 7 - d.getDay()) % 7 || 7;
+  d.setDate(d.getDate() + diff); return d.toISOString().slice(0, 10);
+}
+
+// ─── Voice ────────────────────────────────────────────────
+function setupVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const mic = $('#voiceBtn');
+  if (!SR) {
+    voiceAvailable = false;
+    if (mic) { mic.classList.add('disabled'); mic.title = 'Voz indisponível. Use Chrome no Android em HTTPS.'; mic.setAttribute('aria-disabled', 'true'); }
+    return;
+  }
+  voiceAvailable = true;
+  recognition = new SR(); recognition.lang = 'pt-BR'; recognition.continuous = false; recognition.interimResults = false;
+  recognition.onstart = () => { listening = true; mic?.classList.add('recording'); toast('🎙 Ouvindo... fale o comando.'); };
+  recognition.onend = () => { listening = false; mic?.classList.remove('recording'); };
+  recognition.onerror = e => {
+    listening = false; mic?.classList.remove('recording');
+    if (e.error === 'not-allowed') toast('Microfone bloqueado. Permita o acesso nas configurações do Chrome.');
+    else if (e.error === 'no-speech') toast('Nenhuma fala detectada. Tente novamente.');
+    else toast('Erro de voz. Verifique o microfone.');
+  };
+  recognition.onresult = ev => { const text = ev.results?.[0]?.[0]?.transcript || ''; const inp = $('#aiInput'); if (inp) inp.value = text; handleAiMessage(text, true); };
+}
+function startVoice() {
+  if (!voiceAvailable) { toast('Reconhecimento de voz não disponível. Use Chrome no Android em HTTPS.'); return; }
+  listening ? recognition.stop() : recognition.start();
+}
+function speak(text) {
+  try { if (!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/\n/g, '. ')); u.lang = 'pt-BR'; u.rate = 1.05; speechSynthesis.speak(u); } catch {}
+}
+
+// ─── Notifications ────────────────────────────────────────
+async function requestNotifPermission() {
+  if (!('Notification' in window)) { toast('Notificações não suportadas neste navegador.'); return; }
+  const perm = await Notification.requestPermission();
+  state.settings.notifPermission = perm;
+  saveCloud();
+  const status = $('#notifStatus');
+  if (status) status.textContent = perm === 'granted' ? 'Ativadas ✓' : perm === 'denied' ? 'Bloqueadas pelo usuário' : 'Não concedidas';
+  toast(perm === 'granted' ? '🔔 Notificações ativadas!' : 'Permissão não concedida.');
+}
+function scheduleProactiveInsight() {
+  if (Notification.permission !== 'granted') return;
+  const high = state.tasks.filter(t => !t.done && t.priority === 'high');
+  const daysNoFin = daysSinceLastFinance();
+  setTimeout(() => {
+    if (high.length) new Notification('Assistente IA — Prioridade', { body: `Você tem ${high.length} tarefa(s) urgente(s). Verifique o app.`, icon: 'icons/icon-192.png' });
+    else if (daysNoFin > 2) new Notification('Assistente IA — Finanças', { body: `Você não lança finanças há ${daysNoFin} dias. Registre hoje!`, icon: 'icons/icon-192.png' });
+  }, 3000);
+}
+function updateNotifStatus() {
+  const status = $('#notifStatus');
+  if (!status) return;
+  const p = Notification?.permission || 'default';
+  status.textContent = p === 'granted' ? 'Ativadas ✓' : p === 'denied' ? 'Bloqueadas pelo usuário' : 'Clique para permitir';
+}
+
+// ─── Exports ──────────────────────────────────────────────
+function exportBackup() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `backup-ia-v40-${today()}.json`; a.click(); URL.revokeObjectURL(a.href);
+  state.settings.lastBackupNotice = today(); saveLocal(); toast('Backup JSON exportado.');
+}
+function exportCSV() {
+  const rows = [['Tipo','Título','Área','Valor','Data','Recorrente']];
+  state.finances.forEach(f => rows.push([f.type === 'income' ? 'Receita' : 'Despesa', f.title, f.area || '', f.value, f.date, f.recurring ? 'Sim' : 'Não']));
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `financas-${today()}.csv`; a.click(); URL.revokeObjectURL(a.href);
+  toast('CSV exportado. Abre no Excel ou Google Sheets.');
+}
+function importBackup(file) {
+  const r = new FileReader();
+  r.onload = async () => { try { normalizeData(JSON.parse(r.result)); await saveCloud(); renderAll(); updateSettingsInputs(); toast('Backup importado!'); } catch { toast('Arquivo inválido.'); } };
+  r.readAsText(file);
+}
+function maybeBackupNotice() {
+  if (!state.settings.backupReminder) return;
+  const last = state.settings.lastBackupNotice || '';
+  if (last !== today() && (!firebaseReady || demoMode)) toast('⚠️ Dados locais. Exporte backup em Configurações.', 6000);
+}
+
+// ─── Settings helpers ─────────────────────────────────────
+function updateSettingsInputs() {
+  const apiInput = $('#apiKeyInput'); if (apiInput) apiInput.value = state.settings?.apiKey || '';
+  const epInput = $('#aiEndpointInput'); if (epInput) epInput.value = state.settings?.aiEndpoint || '';
+  applyTheme(state.settings?.theme || 'dark');
+  updateNotifStatus();
+}
+async function saveApiKey() {
+  state.settings.apiKey = ($('#apiKeyInput')?.value || '').trim();
+  await saveCloud(); toast(state.settings.apiKey ? '🧠 API key do Claude salva!' : 'API key removida. Modo local ativo.');
+  renderChat();
+}
+async function saveEndpoint() {
+  state.settings.aiEndpoint = ($('#aiEndpointInput')?.value || '').trim();
+  await saveCloud(); toast(state.settings.aiEndpoint ? 'Endpoint salvo.' : 'Endpoint removido.');
+}
+
+// ─── Modal ────────────────────────────────────────────────
+const findArr = type => type === 'task' ? state.tasks : type === 'finance' ? state.finances : type === 'habit' ? state.habits : state.goals;
+const findObj = (type, id) => findArr(type).find(x => x.id === id);
+
+function openModal(type, id = null) {
+  const modal = $('#modal'), title = $('#modalTitle'), body = $('#modalBody');
+  const obj = id ? findObj(type, id) : null;
+  title.textContent = (id ? 'Editar ' : 'Adicionar ') + ({ task: 'tarefa', finance: 'lançamento', habit: 'hábito', goal: 'meta financeira' }[type] || 'item');
+  if (type === 'task') body.innerHTML = formTask(obj);
+  if (type === 'finance') body.innerHTML = formFinance(obj);
+  if (type === 'habit') body.innerHTML = formHabit(obj);
+  if (type === 'goal') body.innerHTML = formGoal(obj);
+  body.innerHTML += `<div class="modalActions"><button id="modalSave" class="btn primary">Salvar</button><button id="modalCancel" class="btn secondary">Cancelar</button></div>`;
+  if (obj?.priority) { const el = $('#mPriority'); if (el) el.value = obj.priority; }
+  if (obj?.type) { const el = $('#mType'); if (el) el.value = obj.type; }
+  $('#modalSave').onclick = async () => { await saveModal(type, id); closeModal(); };
+  $('#modalCancel').onclick = closeModal;
+  modal.classList.remove('hidden');
+}
+const closeModal = () => $('#modal')?.classList.add('hidden');
+
+function formTask(o = {}) {
+  return `
+    <label>Título</label><input id="mTitle" class="input" value="${esc(o?.title||'')}" placeholder="Ex: ligar para cliente">
+    <label>Área/negócio</label><input id="mArea" class="input" value="${esc(o?.area||'')}" placeholder="Neon Sanja, Sanja Pudding...">
+    <label>Prioridade</label><select id="mPriority"><option value="low">Baixa</option><option value="medium" selected>Média</option><option value="high">Alta</option></select>
+    <label>Prazo</label><input id="mDue" class="input" type="date" value="${esc(o?.due||'')}">
+    <label>Tags (separadas por vírgula)</label><input id="mTags" class="input" value="${esc((o?.tags||[]).join(', '))}" placeholder="marketing, urgente, cliente">
+    <label>Subtarefas (uma por linha)</label><textarea id="mSubtasks" placeholder="Etapa 1&#10;Etapa 2">${(o?.subtasks||[]).map(s=>s.title).join('\n')}</textarea>
+    <label>Observações</label><textarea id="mNotes" placeholder="Detalhes">${esc(o?.notes||'')}</textarea>`;
+}
+function formFinance(o = {}) {
+  return `
+    <label>Tipo</label><select id="mType"><option value="income">Receita</option><option value="expense">Despesa</option></select>
+    <label>Descrição</label><input id="mTitle" class="input" value="${esc(o?.title||'')}" placeholder="Ex: venda de pudim">
+    <label>Categoria/negócio</label><input id="mArea" class="input" value="${esc(o?.area||'')}" placeholder="Sanja Pudding...">
+    <label>Valor</label><input id="mValue" class="input" type="number" step="0.01" value="${esc(o?.value||'')}" placeholder="0,00">
+    <label>Data</label><input id="mDate" class="input" type="date" value="${esc(o?.date||today())}">
+    <label class="checkline" style="text-transform:none;font-size:13px;margin:12px 0 6px"><input type="checkbox" id="mRecurring" ${o?.recurring?'checked':''}> Despesa/Receita fixa mensal (recorrente)</label>
+    <label>Observações</label><textarea id="mNotes" placeholder="Detalhes">${esc(o?.notes||'')}</textarea>`;
+}
+function formHabit(o = {}) {
+  return `
+    <label>Hábito</label><input id="mTitle" class="input" value="${esc(o?.title||'')}" placeholder="Ex: prospectar clientes">
+    <label>Área</label><input id="mArea" class="input" value="${esc(o?.area||'')}" placeholder="Pessoal, negócios...">
+    <label>Sequência atual</label><input id="mStreak" class="input" type="number" value="${Number(o?.streak||0)}">`;
+}
+function formGoal(o = {}) {
+  return `
+    <label>Título da meta</label><input id="mTitle" class="input" value="${esc(o?.title||'')}" placeholder="Ex: reserva de emergência">
+    <label>Valor alvo</label><input id="mTarget" class="input" type="number" step="0.01" value="${esc(o?.target||'')}" placeholder="5000,00">
+    <label>Valor atual</label><input id="mCurrent" class="input" type="number" step="0.01" value="${esc(o?.current||'')}" placeholder="0,00">`;
+}
+
+function upsert(arr, data, id) { const i = arr.findIndex(x => x.id === id); if (i >= 0) arr[i] = data; else arr.unshift(data); }
+
+async function saveModal(type, id) {
+  if (type === 'task') {
+    const tags = ($('#mTags')?.value || '').split(',').map(t => t.trim()).filter(Boolean);
+    const subLines = ($('#mSubtasks')?.value || '').split('\n').map(t => t.trim()).filter(Boolean);
+    const existing = (findObj(type, id)?.subtasks || []);
+    const subtasks = subLines.map(t => existing.find(s => s.title === t) || { id: uid(), title: t, done: false });
+    upsert(state.tasks, { id: id||uid(), title: $('#mTitle').value.trim()||'Sem título', area: $('#mArea').value.trim(), priority: $('#mPriority').value, due: $('#mDue').value, notes: $('#mNotes').value, done: findObj(type,id)?.done||false, tags, subtasks }, id);
+  }
+  if (type === 'finance') {
+    upsert(state.finances, { id: id||uid(), type: $('#mType').value, title: $('#mTitle').value.trim()||'Sem descrição', area: $('#mArea').value.trim(), value: Number($('#mValue').value||0), date: $('#mDate').value||today(), notes: $('#mNotes').value, recurring: $('#mRecurring')?.checked||false }, id);
+  }
+  if (type === 'habit') {
+    const existing = findObj(type, id);
+    upsert(state.habits, { id: id||uid(), title: $('#mTitle').value.trim()||'Sem título', area: $('#mArea').value.trim(), streak: Number($('#mStreak').value||0), checked: existing?.checked||false, lastCheckedDate: existing?.lastCheckedDate||'', history: existing?.history||[] }, id);
+  }
+  if (type === 'goal') {
+    upsert(state.goals, { id: id||uid(), title: $('#mTitle').value.trim()||'Meta', target: Number($('#mTarget').value||0), current: Number($('#mCurrent').value||0) }, id);
+  }
+  await saveCloud(); renderAll(); toast('Salvo com sucesso.');
+}
+
+async function removeItem(type, id) {
+  if (!confirm('Excluir este item? Esta ação não pode ser desfeita.')) return;
+  const arr = findArr(type); const i = arr.findIndex(x => x.id === id);
+  if (i >= 0) arr.splice(i, 1);
+  await saveCloud(); renderAll(); toast('Item excluído.');
+}
+
+// ─── Event binding ────────────────────────────────────────
+function bind() {
+  $('#loginBtn')?.addEventListener('click', login);
+  $('#registerBtn')?.addEventListener('click', register);
+  $('#googleBtn')?.addEventListener('click', googleLogin);
+  $('#demoBtn')?.addEventListener('click', async () => { demoMode = true; currentUser = null; await enterApp(); toast('Modo demonstração ativo.'); });
+  $('#logoutBtn')?.addEventListener('click', async () => { try { if (auth) await signOut(auth); } catch {} exitApp(); });
+  $('#obNext')?.addEventListener('click', obNext);
+  $('#obSkip')?.addEventListener('click', finishOnboarding);
+  $('#modalClose')?.addEventListener('click', closeModal);
+  $('#modal')?.addEventListener('click', e => { if (e.target === $('#modal')) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+  $('#sendAiBtn')?.addEventListener('click', () => handleAiMessage($('#aiInput')?.value || ''));
+  $('#aiInput')?.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAiMessage($('#aiInput')?.value || ''); } });
+  $('#voiceBtn')?.addEventListener('click', startVoice);
+  $('#clearChatBtn')?.addEventListener('click', async () => { if (!confirm('Limpar histórico do chat?')) return; state.chat = []; await saveCloud(); renderChat(); });
+  $('#refreshInsightsBtn')?.addEventListener('click', () => { renderInsights(); toast('Insights atualizados.'); });
+  $('#exportBtn')?.addEventListener('click', exportBackup);
+  $('#exportCsvBtn')?.addEventListener('click', exportCSV);
+  $('#importInput')?.addEventListener('change', e => e.target.files?.[0] && importBackup(e.target.files[0]));
+  $('#syncBtn')?.addEventListener('click', async () => { await saveCloud(); toast(firebaseReady && currentUser && !demoMode ? '☁ Sincronizado!' : '💾 Dados salvos localmente.'); });
+  $('#resetBtn')?.addEventListener('click', async () => { if (confirm('Apagar todos os dados? Sem retorno.')) { state = defaultData(); await saveCloud(); renderAll(); updateSettingsInputs(); toast('Dados apagados.'); } });
+  $('#saveApiKeyBtn')?.addEventListener('click', saveApiKey);
+  $('#saveEndpointBtn')?.addEventListener('click', saveEndpoint);
+  $('#themeBtn')?.addEventListener('click', toggleTheme);
+  $('#notifPermBtn')?.addEventListener('click', requestNotifPermission);
+
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('button,[data-open]'); if (!b) return;
+    if (b.dataset.screen) showScreen(b.dataset.screen);
+    if (b.dataset.open) showScreen(b.dataset.open);
+    if (b.dataset.home !== undefined) showScreen('home');
+    if (b.dataset.modal) openModal(b.dataset.modal);
+    if (b.dataset.edit) openModal(b.dataset.edit, b.dataset.id);
+    if (b.dataset.del) await removeItem(b.dataset.del, b.dataset.id);
+    if (b.dataset.taskFilter) {
+      activeTaskFilter = b.dataset.taskFilter;
+      $$('.filters button[data-task-filter]').forEach(x => x.classList.toggle('active', x === b));
+      renderTasks(activeTaskFilter);
+    }
+    if (b.dataset.financeFilter) {
+      activeFinanceFilter = b.dataset.financeFilter;
+      $$('.filters button[data-finance-filter]').forEach(x => x.classList.toggle('active', x === b));
+      renderFinance(activeFinanceFilter);
+    }
+    if (b.dataset.prompt) { const i = $('#aiInput'); if (i) i.value = b.dataset.prompt; await handleAiMessage(b.dataset.prompt); }
+    if (b.id === 'notifyBtn') requestNotifPermission();
+    // Finance goal modal
+    if (b.id === 'addGoalBtn') openModal('goal');
+  });
+
+  document.addEventListener('change', async e => {
+    if (e.target.dataset.toggleTask) {
+      const t = state.tasks.find(x => x.id === e.target.dataset.toggleTask);
+      if (t) t.done = e.target.checked;
+      await saveCloud(); renderAll();
+    }
+    if (e.target.dataset.toggleHabit) {
+      const h = state.habits.find(x => x.id === e.target.dataset.toggleHabit);
+      if (h) {
+        const t = today();
+        h.checked = e.target.checked;
+        h.lastCheckedDate = e.target.checked ? t : (h.lastCheckedDate || '');
+        h.streak = Math.max(0, Number(h.streak || 0) + (e.target.checked ? 1 : -1));
+        if (e.target.checked && !h.history.includes(t)) h.history = [...(h.history || []).slice(-60), t];
+      }
+      await saveCloud(); renderAll();
+    }
+    if (e.target.dataset.toggleSubtask) {
+      const taskId = e.target.dataset.toggleSubtask;
+      const subId = e.target.dataset.subId;
+      const task = state.tasks.find(x => x.id === taskId);
+      if (task) { const sub = task.subtasks.find(s => s.id === subId); if (sub) sub.done = e.target.checked; }
+      await saveCloud(); renderTasks(activeTaskFilter);
+    }
+  });
+}
+
+// ─── Init ─────────────────────────────────────────────────
+bind();
+setupVoice();
+initFirebase();
+renderAll();
