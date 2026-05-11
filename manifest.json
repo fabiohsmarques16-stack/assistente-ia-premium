@@ -1,13 +1,13 @@
 {
-  "name": "Assistente IA Premium V4.1",
-  "short_name": "Assistente IA",
-  "description": "Sistema operacional pessoal com IA Claude, voz, tarefas, hábitos, finanças e gráficos.",
+  "name": "Nexus IA — Assistente Premium",
+  "short_name": "Nexus IA",
+  "description": "Sistema operacional pessoal com IA Claude, voz, finanças, tarefas, hábitos e gráficos.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#07101a",
-  "theme_color": "#07101a",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
