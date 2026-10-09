@@ -116,7 +116,7 @@ Falha:
     ActiveDocument.EndCommandGroup
     Finalizar
     MsgBox "Nao foi possivel rodar o PowerTRACE automaticamente: " & Err.Description & vbCr & _
-           "Faca manualmente: Bitmaps > TraÃ§ado de linha central > Desenho de linhas.", vbExclamation, "NeonLED"
+           "Faca manualmente: Bitmaps > Traçado de linha central > Desenho de linhas.", vbExclamation, "NeonLED"
 End Sub
 
 '------------------------------------------------------------------------------
