@@ -35,7 +35,7 @@ grant delete on despesas to authenticated;
 grant update on configuracoes to authenticated;
 -- custo médio é calculado pelas compras; o app não pode alterá-lo
 grant insert (nome, marca, tipo, unidade, embalagem_qtd, estoque_minimo, ativo),
-      update (nome, marca, tipo, unidade, embalagem_qtd, estoque_minimo, ativo) on ingredientes to authenticated;
+      update (nome, marca, tipo, embalagem_qtd, estoque_minimo, ativo) on ingredientes to authenticated;
 
 -- dados do bot e auditoria não são lidos pelo app
 drop policy leitura_autorizados on bot_confirmacoes;
