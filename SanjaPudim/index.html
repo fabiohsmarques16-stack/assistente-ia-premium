@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sanja Pudim</title>
+  <meta name="description" content="Pudins artesanais Sanja Pudim — peça pelo WhatsApp.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topo">
+    <a class="marca" href="#">🍮 Sanja Pudim</a>
+    <nav>
+      <a href="#cardapio">Cardápio</a>
+      <a href="#sobre">Sobre</a>
+      <button class="btn-carrinho" id="abrirCarrinho" aria-label="Abrir carrinho">
+        🛒 <span id="qtdCarrinho">0</span>
+      </button>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Pudins artesanais feitos com carinho</h1>
+    <p>Receitas caseiras, ingredientes selecionados e aquela calda que derrete na boca.</p>
+    <a class="btn" href="#cardapio">Ver cardápio</a>
+  </section>
+
+  <main>
+    <section id="cardapio">
+      <h2>Cardápio</h2>
+      <div class="grade" id="listaProdutos"></div>
+    </section>
+
+    <section id="sobre" class="sobre">
+      <h2>Sobre</h2>
+      <p>A Sanja Pudim nasceu da paixão por doces caseiros. Cada pudim é preparado sob encomenda, para chegar fresquinho até você.</p>
+    </section>
+  </main>
+
+  <aside class="carrinho" id="carrinho" aria-hidden="true">
+    <div class="carrinho-topo">
+      <h2>Seu pedido</h2>
+      <button id="fecharCarrinho" aria-label="Fechar carrinho">✕</button>
+    </div>
+    <ul id="itensCarrinho"></ul>
+    <p class="total">Total: <strong id="totalCarrinho">R$ 0,00</strong></p>
+    <label>Seu nome <input id="nomeCliente" type="text" placeholder="Como podemos te chamar?"></label>
+    <label>Observações <textarea id="obsPedido" rows="2" placeholder="Endereço, horário de retirada..."></textarea></label>
+    <button class="btn" id="enviarPedido">Enviar pedido pelo WhatsApp</button>
+  </aside>
+
+  <footer>
+    <p>© <span id="ano"></span> Sanja Pudim</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
