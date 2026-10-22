@@ -25,25 +25,9 @@ begin
   create policy remove_autorizados on despesas for delete to authenticated using (sanja_autorizado());
 end $$;
 
--- privilégios explícitos (o Supabase concede tudo por padrão a anon e authenticated)
-revoke all on all tables in schema public from anon, authenticated;
-grant all on all tables in schema public to service_role;
-grant usage on all sequences in schema public to authenticated, service_role;
-grant select on all tables in schema public to authenticated;
-grant insert, update on fornecedores, sabores, clientes, despesas to authenticated;
-grant delete on despesas to authenticated;
-grant update on configuracoes to authenticated;
--- custo médio é calculado pelas compras; o app não pode alterá-lo
-grant insert (nome, marca, tipo, unidade, embalagem_qtd, estoque_minimo, ativo),
-      update (nome, marca, tipo, embalagem_qtd, estoque_minimo, ativo) on ingredientes to authenticated;
-
 -- dados do bot e auditoria não são lidos pelo app
 drop policy leitura_autorizados on bot_confirmacoes;
 drop policy leitura_autorizados on bot_mensagens;
-
--- funções: só usuários logados (cada uma ainda checa sanja_autorizado)
-revoke execute on all functions in schema public from public, anon;
-grant execute on all functions in schema public to authenticated, service_role;
 
 ----------------------------------------------------------------------
 -- Auditoria
@@ -83,3 +67,30 @@ create trigger imutavel before update or delete on movimentos_estoque for each r
 create trigger imutavel before update or delete on movimentos_pronto for each row execute function bloquear_alteracao();
 create trigger imutavel before update or delete on auditoria for each row execute function bloquear_alteracao();
 create trigger imutavel before update or delete on receita_itens for each row execute function bloquear_alteracao();
+
+----------------------------------------------------------------------
+-- Privilégios
+----------------------------------------------------------------------
+-- O Supabase concede tudo por padrão a anon e authenticated em tabelas e funções novas.
+-- Esta função deixa só o necessário. Rode de novo após restaurar um backup:
+--   select sanja_aplicar_permissoes();
+create or replace function sanja_aplicar_permissoes() returns void language plpgsql as $$
+begin
+  revoke all on all tables in schema public from anon, authenticated;
+  grant all on all tables in schema public to service_role;
+  grant usage on all sequences in schema public to authenticated, service_role;
+  grant select on all tables in schema public to authenticated;
+  grant insert, update on fornecedores, sabores, clientes, despesas to authenticated;
+  grant delete on despesas to authenticated;
+  grant update on configuracoes to authenticated;
+  -- custo médio é calculado pelas compras e a unidade não muda depois de criada
+  grant insert (nome, marca, tipo, unidade, embalagem_qtd, estoque_minimo, ativo),
+        update (nome, marca, tipo, embalagem_qtd, estoque_minimo, ativo) on ingredientes to authenticated;
+
+  -- funções: só usuários logados (cada uma ainda checa sanja_autorizado)
+  revoke execute on all functions in schema public from public, anon, authenticated;
+  grant execute on all functions in schema public to authenticated, service_role;
+  revoke execute on function sanja_aplicar_permissoes() from authenticated, service_role;
+end $$;
+
+select sanja_aplicar_permissoes();

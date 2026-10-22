@@ -1,0 +1,38 @@
+# Backup diário do banco do SANJA Gestão (GitHub Actions, gratuito).
+# Instalação: copie este arquivo para .github/workflows/backup-diario.yml do repositório
+# e crie os segredos (Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_URL  → Supabase: Project Settings → Database → Connection string (URI, "Session pooler")
+#   BACKUP_SENHA     → uma senha forte; o arquivo é criptografado com ela
+# O backup fica como artefato da execução por 90 dias (Actions → Backup diário → Artifacts).
+name: Backup diário
+
+on:
+  schedule:
+    - cron: '17 6 * * *'   # todo dia às 03:17 (horário de Brasília)
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instalar cliente PostgreSQL 17
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17
+      - name: Gerar backup criptografado
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+          SENHA: ${{ secrets.BACKUP_SENHA }}
+        run: |
+          arquivo="sanja-$(date -u +%Y-%m-%d).dump"
+          /usr/lib/postgresql/17/bin/pg_dump "$DB" --schema=public --format=custom --no-owner -f "$arquivo"
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$SENHA" --symmetric --cipher-algo AES256 "$arquivo"
+          ls -la "$arquivo.gpg"
+          echo "ARQUIVO=$arquivo.gpg" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARQUIVO }}
+          path: ${{ env.ARQUIVO }}
+          retention-days: 90

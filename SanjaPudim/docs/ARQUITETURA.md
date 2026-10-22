@@ -111,3 +111,20 @@ Notas: valores de IA são estimativas de ordem de grandeza (cache de prompt redu
 8. **Backup/restauração, documentação de implantação e instalação no Android/PC.**
 
 Cada etapa vem com testes dos cálculos (estoque, reserva, custo, lista de compras, financeiro).
+
+## 7. Decisões tomadas com a proprietária (22/10/2026)
+
+- Toda receita rende 8 copos. A calda tem receita própria, feita em lote separado (receita ainda a cadastrar).
+- Caixa com 24 unidades; sabores podem ser mesclados na caixa; cada sabor sempre em múltiplos de 8.
+- Pudins prontos sem controle de validade. Pedido cancelado após produção volta como estoque pronto.
+- Alguns clientes pedem sem o adesivo de logo → opção "sem logo" por sabor no pedido.
+- Varejo R$ 15,00 e revenda R$ 9,50; pedido mínimo de revenda = 1 caixa (24); varejo = 8.
+  O tipo (varejo/revenda) vem do cadastro do cliente e pode ser trocado no pedido.
+- Sem desconto e sem taxa de entrega; pagamento por Pix (pagamentos parciais são aceitos e geram saldo).
+- Custo pela média ponderada móvel.
+- Uso pela proprietária, pelo app e pelo bot.
+- Infraestrutura: Supabase Free + backup diário criptografado pelo GitHub Actions (migrar para Pro quando fizer sentido).
+- IA do bot: Claude, configurável por variável de ambiente.
+
+Pendências de dados: receita da calda (ingredientes e quantos copos um lote atende), receitas de Brigadeiro e
+Chocolate, tamanhos de embalagem de ovos, leite, leite em pó, copos, tampas e adesivos, e estoques mínimos.
